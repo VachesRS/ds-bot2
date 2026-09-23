@@ -137,7 +137,7 @@ class HelpSelect(discord.ui.Select):
             )
             embed.add_field(
                 name="🎛️ `/automod_toggle <модуль> <включить/выключить>`",
-                value="Включить (`True`) или выключить (`False`) конкретный модуль:\n`anti_nsfw`, `anti_spam`, `anti_invite`, `anti_caps`, `anti_mass_mention`, `ignore_admins`.",
+                value="Включить (`True`) или выключить (`False`) конкретный модуль:\n`anti_toxicity`, `anti_nsfw`, `anti_spam`, `anti_invite`, `anti_caps`, `anti_mass_mention`, `ignore_admins`.",
                 inline=False
             )
             embed.add_field(
@@ -154,6 +154,15 @@ class HelpSelect(discord.ui.Select):
                 description="Модули безопасности работают непрерывно 24/7 без участия модераторов:",
                 color=discord.Color.green(),
                 timestamp=datetime.utcnow()
+            )
+            embed.add_field(
+                name="🤬 Нейросеть оскорблений (RuBERT-Tiny Toxicity)",
+                value=(
+                    "Локальная языковая модель анализирует смысл сообщений на русском языке. "
+                    "Распознает прямые и завуалированные оскорбления в контексте без ложных срабатываний. "
+                    "При нарушении — удаление сообщения и тайм-аут на 5 минут."
+                ),
+                inline=False
             )
             embed.add_field(
                 name="🔞 Нейросеть NSFW (OpenNSFW ResNet-50)",
@@ -231,6 +240,7 @@ class HelpView(discord.ui.View):
         embed.add_field(name="Анти-капс", value=icon(settings.get("anti_caps", 1)), inline=True)
         embed.add_field(name="Анти-массменшн", value=icon(settings.get("anti_mass_mention", 1)), inline=True)
         embed.add_field(name="Нейросеть NSFW", value=icon(settings.get("anti_nsfw", 1)), inline=True)
+        embed.add_field(name="ИИ оскорбления", value=icon(settings.get("anti_toxicity", 1)), inline=True)
         embed.add_field(name="Иммунитет админов", value=icon(settings.get("ignore_admins", 1)), inline=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -365,6 +375,7 @@ class Moderation(commands.Cog):
         app_commands.Choice(name="Анти-массменшн (anti_mass_mention)", value="anti_mass_mention"),
         app_commands.Choice(name="Иммунитет админов (ignore_admins)", value="ignore_admins"),
         app_commands.Choice(name="Фильтр NSFW 18+ (anti_nsfw)", value="anti_nsfw"),
+        app_commands.Choice(name="ИИ-фильтр оскорблений (anti_toxicity)", value="anti_toxicity"),
     ])
     @app_commands.checks.has_permissions(administrator=True)
     async def automod_toggle(self, interaction: discord.Interaction, feature: app_commands.Choice[str], enabled: bool):
@@ -393,6 +404,7 @@ class Moderation(commands.Cog):
         embed.add_field(name="Анти-капс", value=icon(settings.get("anti_caps", 1)), inline=True)
         embed.add_field(name="Анти-массменшн", value=icon(settings.get("anti_mass_mention", 1)), inline=True)
         embed.add_field(name="Фильтр NSFW (18+)", value=icon(settings.get("anti_nsfw", 1)), inline=True)
+        embed.add_field(name="ИИ-фильтр оскорблений", value=icon(settings.get("anti_toxicity", 1)), inline=True)
         embed.add_field(name="Иммунитет админов", value=icon(settings.get("ignore_admins", 1)), inline=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)

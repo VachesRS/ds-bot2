@@ -12,6 +12,7 @@ from discord.ext import commands
 
 from database import get_guild_settings
 from nsfw_detector import detector
+from toxicity_detector import ToxicityDetector
 
 # Регулярное выражение для поиска ссылок-приглашений Discord
 INVITE_REGEX = re.compile(
@@ -49,6 +50,12 @@ class AutoMod(commands.Cog):
         # Кулдаун предупреждений в чат, чтобы не спамить пользователю: (guild_id, user_id) -> last_warn_time
         self.warn_cooldowns = {}
         self.session: aiohttp.ClientSession | None = None
+        try:
+            self.toxicity_detector = ToxicityDetector()
+        except Exception as e:
+            import logging
+            logging.getLogger("AutoMod").error(f"Не удалось загрузить ToxicityDetector: {e}")
+            self.toxicity_detector = None
 
     async def check_image_nsfw_api(self, image_url: str, api_key: str) -> tuple[bool, str]:
         """Проверяет изображение через ModerateContent API на наличие контента 18+."""
@@ -296,6 +303,48 @@ class AutoMod(commands.Cog):
                     except discord.DiscordException:
                         pass
                     return
+
+        # 5.1 Нейросетевая фильтрация оскорблений (RuBERT Toxicity)
+        if settings.get("anti_toxicity", 1) and self.toxicity_detector and message.content:
+            text_clean = message.content.strip()
+            if len(text_clean) >= 3:
+                try:
+                    is_insult, score = await asyncio.to_thread(
+                        self.toxicity_detector.is_insult, text_clean, 0.85
+                    )
+                    if is_insult:
+                        try:
+                            await message.delete()
+                        except discord.DiscordException:
+                            pass
+
+                        # Выдача тайм-аута нарушителю на 5 минут
+                        try:
+                            await member.timeout(timedelta(minutes=5), reason="Автомодерация: Оскорбления (ИИ)")
+                        except discord.DiscordException:
+                            pass
+
+                        await self.send_log_embed(
+                            message.guild,
+                            member,
+                            "🤬 Обнаружено оскорбление (ИИ RuBERT)",
+                            f"Нейросеть классифицировала текст как оскорбление (уверенность: **{int(score * 100)}%**).\nНаказание: тайм-аут на 5 минут.",
+                            channel=message.channel,
+                            content=message.content,
+                            color=discord.Color.red()
+                        )
+
+                        try:
+                            await message.channel.send(
+                                f"⚠️ {member.mention}, оскорбления запрещены правилами сервера! (Выдан тайм-аут на 5 минут)",
+                                delete_after=7
+                            )
+                        except discord.DiscordException:
+                            pass
+                        return
+                except Exception as e:
+                    import logging
+                    logging.getLogger("AutoMod").error(f"Ошибка при анализе оскорблений: {e}")
 
         # 6. Защита от NSFW (18+ картинок, файлов и GIF)
         is_channel_nsfw = getattr(message.channel, "is_nsfw", lambda: False)()

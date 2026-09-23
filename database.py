@@ -30,7 +30,8 @@ async def init_db(db_path: str = DB_PATH) -> None:
                 anti_badwords INTEGER DEFAULT 1,
                 anti_mass_mention INTEGER DEFAULT 1,
                 ignore_admins INTEGER DEFAULT 1,
-                anti_nsfw INTEGER DEFAULT 1
+                anti_nsfw INTEGER DEFAULT 1,
+                anti_toxicity INTEGER DEFAULT 1
             )
             """
         )
@@ -41,6 +42,10 @@ async def init_db(db_path: str = DB_PATH) -> None:
             pass
         try:
             await db.execute("ALTER TABLE guild_settings ADD COLUMN anti_nsfw INTEGER DEFAULT 1")
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE guild_settings ADD COLUMN anti_toxicity INTEGER DEFAULT 1")
         except Exception:
             pass
         await db.commit()
@@ -134,13 +139,14 @@ async def get_guild_settings(guild_id: int, db_path: str = DB_PATH) -> dict:
             "anti_badwords": 1,
             "anti_mass_mention": 1,
             "ignore_admins": 1,
-            "anti_nsfw": 1
+            "anti_nsfw": 1,
+            "anti_toxicity": 1
         }
         await db.execute(
             """
             INSERT OR IGNORE INTO guild_settings 
-            (guild_id, log_channel_id, anti_spam, anti_invite, anti_caps, anti_badwords, anti_mass_mention, ignore_admins, anti_nsfw)
-            VALUES (?, 0, 1, 1, 1, 1, 1, 1, 1)
+            (guild_id, log_channel_id, anti_spam, anti_invite, anti_caps, anti_badwords, anti_mass_mention, ignore_admins, anti_nsfw, anti_toxicity)
+            VALUES (?, 0, 1, 1, 1, 1, 1, 1, 1, 1)
             """,
             (guild_id,)
         )
@@ -164,7 +170,7 @@ async def set_log_channel(guild_id: int, channel_id: int, db_path: str = DB_PATH
 
 async def set_feature_toggle(guild_id: int, feature: str, enabled: bool, db_path: str = DB_PATH) -> None:
     """Включает или выключает модуль автомодерации (anti_spam, anti_invite, etc.)."""
-    allowed_features = {"anti_spam", "anti_invite", "anti_caps", "anti_badwords", "anti_mass_mention", "ignore_admins", "anti_nsfw"}
+    allowed_features = {"anti_spam", "anti_invite", "anti_caps", "anti_badwords", "anti_mass_mention", "ignore_admins", "anti_nsfw", "anti_toxicity"}
     if feature not in allowed_features:
         raise ValueError(f"Unknown feature: {feature}")
 
