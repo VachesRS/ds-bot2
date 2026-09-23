@@ -2,7 +2,28 @@ import asyncio
 import os
 import sys
 import logging
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from dotenv import load_dotenv
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"Bot is alive and running!")
+
+    def log_message(self, format, *args):
+        # Отключаем логирование HTTP-запросов, чтобы не засорять логи бота
+        return
+
+def start_health_server():
+    try:
+        port = int(os.getenv("PORT", 10000))
+        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+        server.serve_forever()
+    except Exception as e:
+        logger.warning(f"Веб-сервер проверки здоровья не запустился: {e}")
 
 import discord
 from discord.ext import commands
@@ -88,6 +109,10 @@ def main():
         print("3. Убедитесь, что в Discord Developer Portal включен 'Message Content Intent'.")
         print("!" * 60 + "\n")
         return
+
+    # Запуск фонового веб-сервера для совместимости с облачными хостингами (Render/Koyeb)
+    threading.Thread(target=start_health_server, daemon=True).start()
+    logger.info("Фоновый веб-сервер проверки работоспособности запущен.")
 
     while True:
         try:
