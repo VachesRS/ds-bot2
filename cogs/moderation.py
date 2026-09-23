@@ -10,6 +10,249 @@ from database import (
 )
 
 
+# ------------------- ИНТЕРАКТИВНОЕ МЕНЮ СПРАВКИ (HELP) -------------------
+
+class HelpSelect(discord.ui.Select):
+    def __init__(self, bot: commands.Bot, author_id: int):
+        options = [
+            discord.SelectOption(
+                label="Главная страница",
+                description="Общая сводка и возможности бота",
+                emoji="🏠",
+                value="home",
+                default=True
+            ),
+            discord.SelectOption(
+                label="Команды модерации",
+                description="/timeout, /untimeout, /kick, /ban, /clear",
+                emoji="🛡️",
+                value="moderation"
+            ),
+            discord.SelectOption(
+                label="Настройки и аудит",
+                description="/setlogs, /automod_toggle, /automod_status",
+                emoji="⚙️",
+                value="settings"
+            ),
+            discord.SelectOption(
+                label="Система автозащиты (ИИ)",
+                description="Нейросеть NSFW, анти-спам, инвайты, капс",
+                emoji="🤖",
+                value="automod"
+            ),
+        ]
+        super().__init__(
+            placeholder="🔍 Выберите категорию для подробностей...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+        self.bot = bot
+        self.author_id = author_id
+
+    def get_embed(self, category: str, guild: discord.Guild | None) -> discord.Embed:
+        avatar_url = self.bot.user.display_avatar.url if self.bot.user else None
+
+        if category == "home":
+            embed = discord.Embed(
+                title="🛡️ Панель помощи — ShieldGuard",
+                description=(
+                    "**ShieldGuard** — автономный бот безопасности нового поколения. "
+                    "Оснащен локальной нейросетью для выявления NSFW/18+ медиа (включая GIF Tenor/Klipy), "
+                    "защитой от рейдов, флуда и полным арсеналом инструментов модератора.\n\n"
+                    "👉 **Выберите интересующий раздел в выпадающем меню ниже**, чтобы изучить команды."
+                ),
+                color=discord.Color.blurple(),
+                timestamp=datetime.utcnow()
+            )
+            embed.add_field(
+                name="📌 Краткая сводка",
+                value=(
+                    f"• **Пинг бота:** `{round(self.bot.latency * 1000)} мс`\n"
+                    f"• **Серверов под защитой:** `{len(self.bot.guilds)}`\n"
+                    f"• **Формат команд:** Слэш-команды (`/`)"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="📂 Доступные категории:",
+                value=(
+                    "• 🛡️ **Команды модерации** — ручные наказания (тайм-аут, бан, кик, очистка)\n"
+                    "• ⚙️ **Настройки и аудит** — привязка канала логов и переключатели модулей\n"
+                    "• 🤖 **Система автозащиты** — как работает локальная нейросеть и фильтры"
+                ),
+                inline=False
+            )
+            if avatar_url:
+                embed.set_thumbnail(url=avatar_url)
+            embed.set_footer(text="ShieldGuard AutoMod • Защита сервера 24/7", icon_url=avatar_url)
+            return embed
+
+        elif category == "moderation":
+            embed = discord.Embed(
+                title="🛡️ Команды ручной модерации",
+                description="Команды для оперативного контроля порядка на сервере (требуют прав модератора):",
+                color=discord.Color.red(),
+                timestamp=datetime.utcnow()
+            )
+            embed.add_field(
+                name="🔇 `/timeout <участник> <минуты> [причина]`",
+                value="Выдать тайм-аут (мут) участнику на время от 1 до 40320 минут (28 дней).",
+                inline=False
+            )
+            embed.add_field(
+                name="🔊 `/untimeout <участник> [причина]`",
+                value="Досрочно снять активный тайм-аут с участника.",
+                inline=False
+            )
+            embed.add_field(
+                name="👢 `/kick <участник> [причина]`",
+                value="Выгнать участника с сервера (он сможет вернуться по приглашению).",
+                inline=False
+            )
+            embed.add_field(
+                name="🔨 `/ban <участник> [причина] [удалить_сообщения]`",
+                value="Заблокировать навсегда с возможностью стереть его сообщения за последние 0–7 дней.",
+                inline=False
+            )
+            embed.add_field(
+                name="🧹 `/clear <количество>`",
+                value="Быстро удалить от 1 до 100 последних сообщений в текущем канале.",
+                inline=False
+            )
+            embed.set_footer(text="Требуются права: Moderate Members / Kick Members / Ban Members / Manage Messages")
+            return embed
+
+        elif category == "settings":
+            embed = discord.Embed(
+                title="⚙️ Настройки и панель управления",
+                description="Команды администратора для конфигурации защиты и канала аудита:",
+                color=discord.Color.gold(),
+                timestamp=datetime.utcnow()
+            )
+            embed.add_field(
+                name="📝 `/setlogs <канал>`",
+                value="Установить текстовый канал, куда бот будет присылать отчёты о нарушениях (удаление NSFW, спам и др.).",
+                inline=False
+            )
+            embed.add_field(
+                name="🎛️ `/automod_toggle <модуль> <включить/выключить>`",
+                value="Включить (`True`) или выключить (`False`) конкретный модуль:\n`anti_nsfw`, `anti_spam`, `anti_invite`, `anti_caps`, `anti_mass_mention`, `ignore_admins`.",
+                inline=False
+            )
+            embed.add_field(
+                name="📊 `/automod_status`",
+                value="Показать статус работы всех систем автомодерации и привязанный канал логов.",
+                inline=False
+            )
+            embed.set_footer(text="Требуются права: Administrator / Manage Server")
+            return embed
+
+        elif category == "automod":
+            embed = discord.Embed(
+                title="🤖 Автономная система защиты (ИИ и фильтры)",
+                description="Модули безопасности работают непрерывно 24/7 без участия модераторов:",
+                color=discord.Color.green(),
+                timestamp=datetime.utcnow()
+            )
+            embed.add_field(
+                name="🔞 Нейросеть NSFW (OpenNSFW ResNet-50)",
+                value=(
+                    "Локальная нейросеть анализирует картинки и GIF-анимации (включая ссылки Tenor, Klipy, Giphy) "
+                    "покадрово без сторонних API. При обнаружении запрещенного контента — "
+                    "сообщение удаляется, а автор получает тайм-аут на 30 минут."
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="⚡ Защита от флуда и спама",
+                value="Блокирует отправку более 5 сообщений за 4 секунды (автомут на 5 минут).",
+                inline=False
+            )
+            embed.add_field(
+                name="📢 Защита от масс-меншнов",
+                value="Удаляет сообщения с более чем 4 упоминаниями пользователей/ролей (автомут на 15 минут).",
+                inline=False
+            )
+            embed.add_field(
+                name="🔗 Анти-инвайты Discord",
+                value="Мгновенно пресекает рекламу чужих серверов и удаляет ссылки-приглашения.",
+                inline=False
+            )
+            embed.add_field(
+                name="🔠 Анти-капс",
+                value="Удаляет сообщения, содержащие более 70% заглавных букв (при длине от 8 символов).",
+                inline=False
+            )
+            embed.set_footer(text="Все инциденты фиксируются в настроенном канале логов")
+            return embed
+
+        return discord.Embed(title="Информация", description="Категория не найдена.")
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("❌ Это меню открыто другим пользователем. Введите `/help`, чтобы открыть своё.", ephemeral=True)
+            return
+
+        chosen = self.values[0]
+        for opt in self.options:
+            opt.default = (opt.value == chosen)
+
+        embed = self.get_embed(chosen, interaction.guild)
+        await interaction.response.edit_message(embed=embed, view=self.view)
+
+
+class HelpView(discord.ui.View):
+    def __init__(self, bot: commands.Bot, author_id: int):
+        super().__init__(timeout=180)
+        self.bot = bot
+        self.author_id = author_id
+        self.message: discord.Message | None = None
+        self.help_select = HelpSelect(bot, author_id)
+        self.add_item(self.help_select)
+
+    @discord.ui.button(label="Статус защиты", style=discord.ButtonStyle.secondary, emoji="📊", row=1)
+    async def status_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        settings = await get_guild_settings(interaction.guild.id)
+        log_channel = interaction.guild.get_channel(settings.get("log_channel_id", 0))
+        log_text = log_channel.mention if log_channel else "Не настроен"
+
+        def icon(val):
+            return "🟢 Вкл" if val else "🔴 Выкл"
+
+        embed = discord.Embed(
+            title="🛡️ Экспресс-статус защиты на сервере",
+            color=discord.Color.blue(),
+            timestamp=datetime.utcnow()
+        )
+        embed.add_field(name="Канал логов", value=log_text, inline=False)
+        embed.add_field(name="Анти-спам", value=icon(settings.get("anti_spam", 1)), inline=True)
+        embed.add_field(name="Анти-инвайты", value=icon(settings.get("anti_invite", 1)), inline=True)
+        embed.add_field(name="Анти-капс", value=icon(settings.get("anti_caps", 1)), inline=True)
+        embed.add_field(name="Анти-массменшн", value=icon(settings.get("anti_mass_mention", 1)), inline=True)
+        embed.add_field(name="Нейросеть NSFW", value=icon(settings.get("anti_nsfw", 1)), inline=True)
+        embed.add_field(name="Иммунитет админов", value=icon(settings.get("ignore_admins", 1)), inline=True)
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="Закрыть", style=discord.ButtonStyle.danger, emoji="🗑️", row=1)
+    async def close_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("❌ Только автор команды может закрыть это меню.", ephemeral=True)
+            return
+        if interaction.message:
+            await interaction.message.delete()
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        try:
+            if self.message:
+                await self.message.edit(view=self)
+        except Exception:
+            pass
+
+
 class Moderation(commands.Cog):
     """Слэш-команды модерации и управления настройками сервера."""
 
@@ -153,6 +396,25 @@ class Moderation(commands.Cog):
         embed.add_field(name="Иммунитет админов", value=icon(settings.get("ignore_admins", 1)), inline=True)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    # ------------------- КОМАНДА ПОМОЩИ (HELP) -------------------
+
+    @app_commands.command(name="help", description="Интерактивное меню со всеми командами и возможностями бота")
+    async def help_slash(self, interaction: discord.Interaction):
+        view = HelpView(self.bot, interaction.user.id)
+        embed = view.help_select.get_embed("home", interaction.guild)
+        await interaction.response.send_message(embed=embed, view=view)
+        try:
+            view.message = await interaction.original_response()
+        except Exception:
+            pass
+
+    @commands.command(name="help")
+    async def help_prefix(self, ctx: commands.Context):
+        view = HelpView(self.bot, ctx.author.id)
+        embed = view.help_select.get_embed("home", ctx.guild)
+        msg = await ctx.send(embed=embed, view=view)
+        view.message = msg
 
     # Обработка ошибок прав доступа
     async def cog_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
