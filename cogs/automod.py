@@ -199,33 +199,64 @@ class AutoMod(commands.Cog):
         # 1. Защита от спама и флуда
         if settings.get("anti_spam", 1):
             history = self.message_timestamps[user_key]
-            # Оставляем только сообщения за последние 4 секунды
-            history = [t for t in history if now - t < 4.0]
-            history.append(now)
+            # Оставляем только сообщения за последние 15 секунд: list[(timestamp, clean_text)]
+            history = [(t, c) for t, c in history if now - t < 15.0]
+            clean_content = message.content.strip().lower() if message.content else ""
+            history.append((now, clean_content))
             self.message_timestamps[user_key] = history
 
-            # Если пользователь отправил более 5 сообщений за 4 секунды
-            if len(history) >= 5:
+            # Проверка 1: Флуд (от 5 сообщений за последние 4 секунды)
+            recent_4s = [t for t, _ in history if now - t < 4.0]
+            is_flood = len(recent_4s) >= 5
+
+            # Проверка 2: Повторяющийся спам (от 3 одинаковых сообщений за последние 15 секунд при длине от 4 символов)
+            is_repeat_spam = False
+            if len(clean_content) >= 4:
+                matching_repeats = [t for t, c in history if c == clean_content]
+                if len(matching_repeats) >= 3:
+                    is_repeat_spam = True
+
+            if is_flood or is_repeat_spam:
                 self.message_timestamps[user_key] = []
+                reason_type = "Повторяющийся спам" if is_repeat_spam else "Флуд"
+
+                # Удаляем все сообщения нарушителя за последние 30-35 секунд в этом канале
+                deleted_count = 0
+                cutoff = discord.utils.utcnow() - timedelta(seconds=35)
                 try:
-                    await message.delete()
-                except discord.DiscordException:
-                    pass
+                    deleted_msgs = await message.channel.purge(
+                        limit=100,
+                        check=lambda m: m.author.id == member.id,
+                        after=cutoff,
+                        bulk=True,
+                        reason=f"Автомодерация: Очистка спама нарушителя за последние 30 секунд ({reason_type})"
+                    )
+                    deleted_count = len(deleted_msgs)
+                except discord.DiscordException as e:
+                    print(f"⚠️ [AutoMod] Ошибка при purge спама: {e}")
+                    try:
+                        await message.delete()
+                        deleted_count = 1
+                    except discord.DiscordException:
+                        pass
 
                 try:
                     # Таймаут на 5 минут
-                    await member.timeout(timedelta(minutes=5), reason="Автомодерация: Флуд / Спам")
+                    await member.timeout(timedelta(minutes=5), reason=f"Автомодерация: {reason_type}")
                 except discord.DiscordException:
                     pass
 
                 await self.log_violation(
-                    member, "Тайм-аут (Флуд)", "Флуд / спам сообщениями (выдан тайм-аут на 5 минут)",
-                    message.channel, color=discord.Color.red()
+                    member,
+                    f"Тайм-аут ({reason_type})",
+                    f"Обнаружен {reason_type.lower()} сообщениями. Выдан тайм-аут на 5 минут, удалены сообщения нарушителя за последние 30 сек: **{deleted_count}** шт.",
+                    message.channel,
+                    color=discord.Color.red()
                 )
 
                 try:
-                    warn_msg = await message.channel.send(
-                        f"⚠️ {member.mention}, пожалуйста, не флудите! Вам выдан тайм-аут на 5 минут.",
+                    await message.channel.send(
+                        f"⚠️ {member.mention}, спам запрещён! Удалены ваши сообщения за последние 30 секунд ({deleted_count} шт.), выдан тайм-аут на 5 минут.",
                         delete_after=7
                     )
                 except discord.DiscordException:
