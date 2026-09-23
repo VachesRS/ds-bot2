@@ -34,10 +34,11 @@ GIF_SERVICES_REGEX = re.compile(
     re.IGNORECASE
 )
 
-IMAGE_URL_REGEX = re.compile(
-    r"https?://\S+\.(?:png|jpg|jpeg|webp|gif)(?:\?\S*)?",
+MEDIA_URL_REGEX = re.compile(
+    r"https?://\S+\.(?:png|jpg|jpeg|webp|gif|mp4|webm|mov)(?:\?\S*)?",
     re.IGNORECASE
 )
+IMAGE_URL_REGEX = MEDIA_URL_REGEX
 
 
 class AutoMod(commands.Cog):
@@ -387,11 +388,14 @@ class AutoMod(commands.Cog):
                     if is_nsfw:
                         break
 
-            # 6.2 Прямой покадровый анализ прикрепленных файлов (GIF, картинки) локальной нейросетью
+            # 6.2 Прямой покадровый анализ прикрепленных файлов (GIF, картинки, видео) локальной нейросетью
             if not is_nsfw and message.attachments:
                 for att in message.attachments:
                     is_image_file = (att.content_type and att.content_type.startswith("image/")) or \
                                     any(att.filename.lower().endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif"])
+                    is_video_file = (att.content_type and att.content_type.startswith("video/")) or \
+                                    any(att.filename.lower().endswith(ext) for ext in [".mp4", ".webm", ".mov", ".avi", ".mkv"])
+
                     if is_image_file:
                         try:
                             file_data = await att.read()
@@ -402,40 +406,65 @@ class AutoMod(commands.Cog):
                                 nsfw_reason = reason
                                 break
                         except Exception as e:
-                            print(f"⚠️ [AutoMod] Ошибка при чтении файла {att.filename}: {e}")
+                            print(f"⚠️ [AutoMod] Ошибка при чтении файла изображения {att.filename}: {e}")
 
-            # 6.3 Анализ внешних ссылок и встроенных GIF/картинок (Klipy, Tenor, Giphy, direct URLs) нейросетью
+                    elif is_video_file:
+                        # Ограничиваем размер видео (до 25 МБ) для стабильности памяти на Render (512 МБ RAM)
+                        if att.size and att.size > 25 * 1024 * 1024:
+                            continue
+                        try:
+                            file_data = await att.read()
+                            flagged, score, reason = await asyncio.to_thread(detector.analyze_video_bytes, file_data, 6)
+                            if flagged:
+                                is_nsfw = True
+                                nsfw_reason = reason
+                                break
+                        except Exception as e:
+                            print(f"⚠️ [AutoMod] Ошибка при анализе видео {att.filename}: {e}")
+
+            # 6.3 Анализ внешних ссылок и встроенных медиа (Klipy, Tenor, Giphy, direct URLs, видео) нейросетью
             if not is_nsfw:
                 target_urls = []
                 for url_match in IMAGE_URL_REGEX.findall(message.content):
                     target_urls.append(url_match)
 
-                # Собираем медиа из эмбедов (Discord создает их для Klipy / Tenor)
+                # Собираем медиа из эмбедов
                 for emb in message.embeds:
                     if emb.image and emb.image.url:
                         target_urls.append(emb.image.url)
                     elif emb.thumbnail and emb.thumbnail.url:
                         target_urls.append(emb.thumbnail.url)
-                    elif emb.video and emb.video.url and emb.video.url.endswith((".gif", ".png", ".jpg", ".webp")):
+                    elif emb.video and emb.video.url:
                         target_urls.append(emb.video.url)
 
                 if target_urls:
                     if not self.session or self.session.closed:
                         self.session = aiohttp.ClientSession()
 
-                    for img_url in target_urls[:3]:  # проверяем до 3 медиа
+                    for media_url in target_urls[:3]:  # проверяем до 3 медиа
                         try:
-                            async with self.session.get(img_url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
+                            async with self.session.get(media_url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
                                 if resp.status == 200:
+                                    # Ограничение размера загрузки из сети: до 20 МБ
+                                    content_len = resp.headers.get("Content-Length")
+                                    if content_len and int(content_len) > 20 * 1024 * 1024:
+                                        continue
+
                                     data = await resp.read()
-                                    is_gif = ".gif" in img_url.lower() or "tenor" in img_url.lower() or "klipy" in img_url.lower() or "giphy" in img_url.lower()
-                                    flagged, score, reason = await asyncio.to_thread(detector.analyze_bytes, data, is_gif, 5)
+                                    is_video = any(media_url.lower().endswith(ext) for ext in [".mp4", ".webm", ".mov"]) or (resp.content_type and "video" in resp.content_type)
+                                    if is_video:
+                                        flagged, score, reason = await asyncio.to_thread(detector.analyze_video_bytes, data, 6)
+                                    else:
+                                        is_gif = ".gif" in media_url.lower() or "tenor" in media_url.lower() or "klipy" in media_url.lower() or "giphy" in media_url.lower()
+                                        flagged, score, reason = await asyncio.to_thread(detector.analyze_bytes, data, is_gif, 5)
+
                                     if flagged:
                                         is_nsfw = True
                                         nsfw_reason = reason
                                         break
                         except Exception:
                             pass
+
 
             if is_nsfw:
                 try:

@@ -1,8 +1,10 @@
 import io
 import os
 import logging
+import tempfile
 from typing import Tuple
 
+import cv2
 import numpy as np
 import onnxruntime as ort
 from PIL import Image, ImageSequence
@@ -72,6 +74,24 @@ class NSFWDetector:
             logger.error(f"Ошибка инференса нейросети: {e}")
             return 0.0
 
+    def classify_cv2_frame(self, frame: np.ndarray) -> float:
+        """Классификация кадра OpenCV (BGR) напрямую без конвертации в PIL."""
+        if not self.session:
+            return 0.0
+        try:
+            resized = cv2.resize(frame, (224, 224), interpolation=cv2.INTER_LINEAR).astype(np.float32)
+            # OpenCV кадр уже в BGR!
+            resized[:, :, 0] -= 102.9801  # B
+            resized[:, :, 1] -= 115.9465  # G
+            resized[:, :, 2] -= 122.7717  # R
+            chw = resized.transpose((2, 0, 1))
+            tensor = np.expand_dims(chw, axis=0)
+            out = self.session.run(None, {self.input_name: tensor})[0][0]
+            return float(out[1])
+        except Exception as e:
+            logger.error(f"Ошибка инференса кадра OpenCV: {e}")
+            return 0.0
+
     def analyze_bytes(self, data: bytes, is_gif: bool = False, sample_frames: int = 5) -> Tuple[bool, float, str]:
         """
         Анализирует байты картинки или GIF.
@@ -117,6 +137,71 @@ class NSFWDetector:
         except Exception as e:
             logger.debug(f"Не удалось проанализировать изображение: {e}")
             return False, 0.0, f"Ошибка чтения: {e}"
+
+    def analyze_video_bytes(self, data: bytes, sample_frames: int = 6) -> Tuple[bool, float, str]:
+        """
+        Анализирует байты видеофайла (.mp4, .webm, .mov, .avi и т.д.).
+        Извлекает sample_frames равномерно распределенных кадров и проверяет их нейросетью OpenNSFW.
+        """
+        if not self.session:
+            return False, 0.0, "Модель не загружена"
+
+        tmp_path = None
+        cap = None
+        try:
+            # Записываем байты во временный файл для чтения через VideoCapture
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+                tmp.write(data)
+                tmp_path = tmp.name
+
+            cap = cv2.VideoCapture(tmp_path)
+            if not cap.isOpened():
+                return False, 0.0, "Не удалось открыть видеофайл"
+
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
+
+            if total_frames <= 0:
+                total_frames = 60
+
+            # Выбираем равномерные индексы кадров
+            if total_frames <= sample_frames:
+                frame_indices = list(range(max(1, total_frames)))
+            else:
+                step = (total_frames - 1) / (sample_frames - 1)
+                frame_indices = [int(round(i * step)) for i in range(sample_frames)]
+
+            max_score = 0.0
+            detected_frame_num = -1
+
+            for f_idx in frame_indices:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, f_idx)
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    continue
+
+                score = self.classify_cv2_frame(frame)
+                if score > max_score:
+                    max_score = score
+                    detected_frame_num = f_idx
+
+                if score >= NSFW_THRESHOLD:
+                    time_sec = f_idx / fps if fps > 0 else 0
+                    return True, score, f"Нейросеть обнаружила 18+ контент в видео (кадр #{detected_frame_num + 1}, ~{time_sec:.1f} сек, вероятность: {score * 100:.1f}%)"
+
+            return False, max_score, ""
+
+        except Exception as e:
+            logger.error(f"Ошибка при анализе видео: {e}")
+            return False, 0.0, f"Ошибка видеоанализа: {e}"
+        finally:
+            if cap is not None:
+                cap.release()
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
 
 
 # Синглтон детектора для переиспользования
