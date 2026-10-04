@@ -99,6 +99,15 @@ class AutoModBot(commands.Bot):
         logger.info("Автомодерация активна и готова к работе.")
         logger.info("=" * 45)
 
+        # Мгновенная синхронизация слэш-команд для каждого сервера (устраняет 1-часовую задержку кэша Discord)
+        for guild in self.guilds:
+            try:
+                self.tree.copy_global_to(guild=guild)
+                await self.tree.sync(guild=guild)
+                logger.info(f"Слэш-команды успешно синхронизированы для сервера: {guild.name} ({guild.id})")
+            except Exception as e:
+                logger.warning(f"Не удалось синхронизировать команды для {guild.name}: {e}")
+
         # Автоматическое восстановление настроек всех серверов из облака Discord
         try:
             from cloud_sync import restore_all_guilds
@@ -107,12 +116,19 @@ class AutoModBot(commands.Bot):
             logger.error(f"Не удалось запустить восстановление настроек: {e}")
 
     async def on_guild_join(self, guild: discord.Guild):
-        """При добавлении на новый сервер — создание облачного хранилища настроек."""
+        """При добавлении на новый сервер — синхронизация команд и создание облачного хранилища."""
+        try:
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
+        except Exception as e:
+            logger.warning(f"Не удалось синхронизировать команды для нового сервера {guild.id}: {e}")
+
         try:
             from cloud_sync import sync_guild_settings_to_discord
             await sync_guild_settings_to_discord(self, guild)
         except Exception as e:
             logger.error(f"Ошибка при сохранении настроек для нового сервера {guild.id}: {e}")
+
 
 
 

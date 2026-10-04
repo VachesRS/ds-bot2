@@ -532,17 +532,27 @@ class AutoMod(commands.Cog):
 
             role = member.guild.get_role(autorole_id)
             if not role:
+                print(f"⚠️ [AutoRole] Роль с ID {autorole_id} не найдена на сервере {member.guild.name}")
                 return
 
-            bot_member = member.guild.me
-            if not bot_member.guild_permissions.manage_roles:
+            bot_member = member.guild.me or member.guild.get_member(self.bot.user.id)
+            if not bot_member:
+                try:
+                    bot_member = await member.guild.fetch_member(self.bot.user.id)
+                except Exception:
+                    pass
+
+            if bot_member and not bot_member.guild_permissions.manage_roles:
+                print(f"⚠️ [AutoRole] У бота нет прав Manage Roles на сервере {member.guild.name}")
                 return
 
             # Проверка иерархии ролей (роль бота должна быть выше)
-            if role >= bot_member.top_role:
+            if bot_member and role >= bot_member.top_role:
+                print(f"⚠️ [AutoRole] Роль {role.name} выше или равна роли бота на сервере {member.guild.name}")
                 return
 
             await member.add_roles(role, reason="ShieldGuard: Автовыдача роли новому участнику (AutoRole)")
+            print(f"✅ [AutoRole] Роль '{role.name}' успешно выдана новому участнику {member.name} ({member.id})")
 
             # Отправка структурированного лога в канал аудита
             await self.send_log_embed(
@@ -552,10 +562,11 @@ class AutoMod(commands.Cog):
                 f"Новому участнику {member.mention} при заходе на сервер успешно выдана роль {role.mention}.",
                 color=discord.Color.green()
             )
-        except discord.Forbidden:
-            pass
+        except discord.Forbidden as e:
+            print(f"⚠️ [AutoRole] Ошибка Forbidden при выдаче роли {member.name}: {e}")
         except Exception as e:
             print(f"⚠️ [AutoRole] Ошибка при выдаче роли новому участнику: {e}")
+
 
 
 async def setup(bot: commands.Bot):

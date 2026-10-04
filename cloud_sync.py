@@ -22,9 +22,16 @@ async def get_or_create_data_channel(guild: discord.Guild) -> discord.TextChanne
 
     # 2. Проверяем права бота на создание каналов
     bot_member = guild.me
-    if not bot_member.guild_permissions.manage_channels:
+    if not bot_member:
+        try:
+            bot_member = await guild.fetch_member(guild._state.user.id)
+        except Exception:
+            pass
+
+    if not bot_member or not bot_member.guild_permissions.manage_channels:
         logger.warning(f"У бота нет прав Manage Channels для создания канала данных на сервере {guild.name}")
         return None
+
 
     try:
         overwrites = {

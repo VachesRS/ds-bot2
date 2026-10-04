@@ -380,6 +380,50 @@ class Moderation(commands.Cog):
 
     # ------------------- АВТОВЫДАЧА РОЛЕЙ (AUTOROLE) -------------------
 
+    async def _set_autorole_common(self, guild: discord.Guild, user: discord.Member, role: discord.Role, send_func):
+        """Общая логика валидации и сохранения автороли для слэш и префиксных команд."""
+        bot_member = guild.me or guild.get_member(self.bot.user.id)
+        if not bot_member:
+            try:
+                bot_member = await guild.fetch_member(self.bot.user.id)
+            except Exception:
+                pass
+
+        if bot_member and not bot_member.guild_permissions.manage_roles:
+            await send_func(
+                "❌ У бота нет права **Управление ролями** (`Manage Roles`)!\n"
+                "Пожалуйста, выдайте роли бота это право в настройках сервера."
+            )
+            return False
+
+        if role.is_default():
+            await send_func("❌ Роль `@everyone` не может быть назначена в качестве автороли.")
+            return False
+
+        if role.managed:
+            await send_func("❌ Эта роль управляется внешней интеграцией или ботом и не может быть назначена.")
+            return False
+
+        if bot_member and role >= bot_member.top_role and guild.owner_id != user.id:
+            await send_func(
+                f"⚠️ Роль {role.mention} находится на том же уровне или выше роли бота ({bot_member.top_role.mention}).\n"
+                "Переместите роль бота **выше** этой роли в списке ролей сервера (Настройки сервера -> Роли), чтобы бот мог её выдавать!"
+            )
+            return False
+
+        await set_autorole(guild.id, role.id)
+        embed = discord.Embed(
+            title="✅ Автороль успешно установлена",
+            description=f"Каждый новый участник при заходе на сервер автоматически получит роль {role.mention}.",
+            color=discord.Color.green(),
+            timestamp=datetime.utcnow()
+        )
+        embed.add_field(name="Назначенная роль", value=f"{role.name} (`ID: {role.id}`)", inline=True)
+        embed.add_field(name="Администратор", value=user.mention, inline=True)
+        await send_func(embed=embed)
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, guild))
+        return True
+
     autorole = app_commands.Group(
         name="autorole",
         description="Настройка автоматической выдачи роли новым участникам",
@@ -390,42 +434,12 @@ class Moderation(commands.Cog):
     @app_commands.describe(role="Роль для автоматической выдачи")
     @app_commands.checks.has_permissions(administrator=True)
     async def autorole_set(self, interaction: discord.Interaction, role: discord.Role):
-        bot_member = interaction.guild.me
-        if not bot_member.guild_permissions.manage_roles:
-            await interaction.response.send_message(
-                "❌ У бота нет права **Управление ролями** (`Manage Roles`)!\n"
-                "Пожалуйста, выдайте роли бота это право в настройках сервера.",
-                ephemeral=True
-            )
-            return
-
-        if role.is_default():
-            await interaction.response.send_message("❌ Роль `@everyone` не может быть назначена в качестве автороли.", ephemeral=True)
-            return
-
-        if role.managed:
-            await interaction.response.send_message("❌ Эта роль управляется внешней интеграцией или ботом и не может быть назначена.", ephemeral=True)
-            return
-
-        if role >= bot_member.top_role and interaction.guild.owner_id != interaction.user.id:
-            await interaction.response.send_message(
-                f"⚠️ Роль {role.mention} находится на том же уровне или выше высшей роли бота ({bot_member.top_role.mention}).\n"
-                "Переместите роль бота **выше** этой роли в списке ролей сервера (Настройки сервера -> Роли), чтобы бот мог её выдавать!",
-                ephemeral=True
-            )
-            return
-
-        await set_autorole(interaction.guild.id, role.id)
-        embed = discord.Embed(
-            title="✅ Автороль успешно установлена",
-            description=f"Каждый новый участник при заходе на сервер автоматически получит роль {role.mention}.",
-            color=discord.Color.green(),
-            timestamp=datetime.utcnow()
-        )
-        embed.add_field(name="Назначенная роль", value=f"{role.name} (`ID: {role.id}`)", inline=True)
-        embed.add_field(name="Администратор", value=interaction.user.mention, inline=True)
-        await interaction.response.send_message(embed=embed)
-        asyncio.create_task(sync_guild_settings_to_discord(self.bot, interaction.guild))
+        async def send_fn(*args, **kwargs):
+            if interaction.response.is_done():
+                await interaction.followup.send(*args, **kwargs)
+            else:
+                await interaction.response.send_message(*args, **kwargs)
+        await self._set_autorole_common(interaction.guild, interaction.user, role, send_fn)
 
     @autorole.command(name="remove", description="Отключить автоматическую выдачу роли новичкам")
     @app_commands.checks.has_permissions(administrator=True)
@@ -454,6 +468,66 @@ class Moderation(commands.Cog):
             "ℹ️ Автороль для новичков сейчас **не настроена**.\nИспользуйте команду `/autorole set <роль>`, чтобы включить её.",
             ephemeral=True
         )
+
+    # Префиксные команды автороли: !autorole @Роль, !autorole set @Роль, !autorole remove
+    @commands.group(name="autorole", invoke_without_command=True)
+    @commands.has_permissions(administrator=True)
+    async def autorole_prefix(self, ctx: commands.Context, role: discord.Role = None):
+        """Префиксная команда автороли: !autorole @Роль или !autorole"""
+        if role is None:
+            settings = await get_guild_settings(ctx.guild.id)
+            role_id = settings.get("autorole_id", 0)
+            if role_id:
+                r = ctx.guild.get_role(role_id)
+                if r:
+                    await ctx.send(f"🏷️ Текущая автороль для новичков: {r.mention} (`ID: {r.id}`).")
+                    return
+            await ctx.send("ℹ️ Автороль сейчас не настроена. Используйте `!autorole @Роль` или `/autorole set @Роль`.")
+            return
+
+        await self._set_autorole_common(ctx.guild, ctx.author, role, ctx.send)
+
+    @autorole_prefix.command(name="set")
+    @commands.has_permissions(administrator=True)
+    async def autorole_prefix_set(self, ctx: commands.Context, role: discord.Role):
+        """Установить автороль: !autorole set @Роль"""
+        await self._set_autorole_common(ctx.guild, ctx.author, role, ctx.send)
+
+    @autorole_prefix.command(name="remove")
+    @commands.has_permissions(administrator=True)
+    async def autorole_prefix_remove(self, ctx: commands.Context):
+        """Отключить автороль: !autorole remove"""
+        await set_autorole(ctx.guild.id, 0)
+        await ctx.send("❌ Автовыдача роли новым участникам отключена.")
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, ctx.guild))
+
+    @autorole_prefix.command(name="status")
+    @commands.has_permissions(manage_guild=True)
+    async def autorole_prefix_status(self, ctx: commands.Context):
+        """Показать статус автороли: !autorole status"""
+        settings = await get_guild_settings(ctx.guild.id)
+        role_id = settings.get("autorole_id", 0)
+        if role_id:
+            role = ctx.guild.get_role(role_id)
+            if role:
+                await ctx.send(f"🏷️ Текущая автороль для новичков: {role.mention} (`{role.id}`).")
+                return
+        await ctx.send("ℹ️ Автороль для новичков сейчас не настроена.")
+
+    # ------------------- ПРИНУДИТЕЛЬНАЯ СИНХРОНИЗАЦИЯ КОМАНД -------------------
+
+    @commands.command(name="sync")
+    @commands.has_permissions(administrator=True)
+    async def sync_cmd(self, ctx: commands.Context):
+        """Принудительно мгновенно синхронизировать все слэш-команды на этом сервере."""
+        msg = await ctx.send("🔄 Синхронизирую слэш-команды для этого сервера...")
+        try:
+            self.bot.tree.copy_global_to(guild=ctx.guild)
+            synced = await self.bot.tree.sync(guild=ctx.guild)
+            await msg.edit(content=f"✅ Успешно синхронизировано **{len(synced)}** слэш-команд для сервера `{ctx.guild.name}`!\nТеперь команды `/autorole`, `/sync_settings`, `/help` и все остальные доступны мгновенно в списке `/`.")
+        except Exception as e:
+            await msg.edit(content=f"❌ Ошибка синхронизации: {e}")
+
 
 
     @app_commands.command(name="automod_toggle", description="Включить или выключить модуль автомодерации")
