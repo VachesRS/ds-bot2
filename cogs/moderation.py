@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 import discord
 from discord import app_commands
@@ -9,6 +10,7 @@ from database import (
     set_feature_toggle,
     set_autorole
 )
+from cloud_sync import sync_guild_settings_to_discord
 
 
 # ------------------- ИНТЕРАКТИВНОЕ МЕНЮ СПРАВКИ (HELP) -------------------
@@ -374,6 +376,7 @@ class Moderation(commands.Cog):
     async def setlogs(self, interaction: discord.Interaction, channel: discord.TextChannel):
         await set_log_channel(interaction.guild.id, channel.id)
         await interaction.response.send_message(f"✅ Канал логов автомодерации установлен на {channel.mention}.")
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, interaction.guild))
 
     # ------------------- АВТОВЫДАЧА РОЛЕЙ (AUTOROLE) -------------------
 
@@ -422,12 +425,14 @@ class Moderation(commands.Cog):
         embed.add_field(name="Назначенная роль", value=f"{role.name} (`ID: {role.id}`)", inline=True)
         embed.add_field(name="Администратор", value=interaction.user.mention, inline=True)
         await interaction.response.send_message(embed=embed)
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, interaction.guild))
 
     @autorole.command(name="remove", description="Отключить автоматическую выдачу роли новичкам")
     @app_commands.checks.has_permissions(administrator=True)
     async def autorole_remove(self, interaction: discord.Interaction):
         await set_autorole(interaction.guild.id, 0)
         await interaction.response.send_message("❌ Автовыдача роли новым участникам отключена.", ephemeral=True)
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, interaction.guild))
 
     @autorole.command(name="status", description="Посмотреть текущую настроенную автороль для новичков")
     @app_commands.checks.has_permissions(manage_guild=True)
@@ -470,6 +475,25 @@ class Moderation(commands.Cog):
         await set_feature_toggle(interaction.guild.id, feature.value, enabled)
         status_text = "включен" if enabled else "выключен"
         await interaction.response.send_message(f"⚙️ Модуль **{feature.name}** теперь **{status_text}**.", ephemeral=True)
+        asyncio.create_task(sync_guild_settings_to_discord(self.bot, interaction.guild))
+
+    @app_commands.command(name="sync_settings", description="Сохранить настройки сервера в защищенный канал Discord")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def sync_settings(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ok = await sync_guild_settings_to_discord(self.bot, interaction.guild)
+        if ok:
+            await interaction.followup.send(
+                "☁️ Все настройки сервера успешно сохранены в служебный канал `🔒-shieldguard-data`!\n"
+                "Бот будет автоматически восстанавливать их при каждом новом коммите, обновлении или перезапуске.",
+                ephemeral=True
+            )
+        else:
+            await interaction.followup.send(
+                "⚠️ Не удалось обновить служебный канал. Проверьте, есть ли у бота право **Управление каналами** (`Manage Channels`).",
+                ephemeral=True
+            )
+
 
     @app_commands.command(name="automod_status", description="Показать статус модулей автомодерации")
     @app_commands.checks.has_permissions(manage_guild=True)

@@ -99,6 +99,22 @@ class AutoModBot(commands.Bot):
         logger.info("Автомодерация активна и готова к работе.")
         logger.info("=" * 45)
 
+        # Автоматическое восстановление настроек всех серверов из облака Discord
+        try:
+            from cloud_sync import restore_all_guilds
+            asyncio.create_task(restore_all_guilds(self))
+        except Exception as e:
+            logger.error(f"Не удалось запустить восстановление настроек: {e}")
+
+    async def on_guild_join(self, guild: discord.Guild):
+        """При добавлении на новый сервер — создание облачного хранилища настроек."""
+        try:
+            from cloud_sync import sync_guild_settings_to_discord
+            await sync_guild_settings_to_discord(self, guild)
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении настроек для нового сервера {guild.id}: {e}")
+
+
 
 def main():
     if not TOKEN or TOKEN.strip() == "" or "your_bot_token" in TOKEN:
