@@ -6,7 +6,8 @@ from discord.ext import commands
 from database import (
     get_guild_settings,
     set_log_channel,
-    set_feature_toggle
+    set_feature_toggle,
+    set_autorole
 )
 
 
@@ -136,17 +137,23 @@ class HelpSelect(discord.ui.Select):
                 inline=False
             )
             embed.add_field(
+                name="🏷️ `/autorole set <роль>` | `/autorole remove`",
+                value="Настроить автоматическую выдачу роли каждому новому участнику при заходе на сервер.",
+                inline=False
+            )
+            embed.add_field(
                 name="🎛️ `/automod_toggle <модуль> <включить/выключить>`",
                 value="Включить (`True`) или выключить (`False`) конкретный модуль:\n`anti_toxicity`, `anti_nsfw`, `anti_spam`, `anti_invite`, `anti_caps`, `anti_mass_mention`, `ignore_admins`.",
                 inline=False
             )
             embed.add_field(
                 name="📊 `/automod_status`",
-                value="Показать статус работы всех систем автомодерации и привязанный канал логов.",
+                value="Показать статус работы всех систем автомодерации, автороль и привязанный канал логов.",
                 inline=False
             )
             embed.set_footer(text="Требуются права: Administrator / Manage Server")
             return embed
+
 
         elif category == "automod":
             embed = discord.Embed(
@@ -229,12 +236,17 @@ class HelpView(discord.ui.View):
         def icon(val):
             return "🟢 Вкл" if val else "🔴 Выкл"
 
+        autorole_id = settings.get("autorole_id", 0)
+        autorole = interaction.guild.get_role(autorole_id) if autorole_id else None
+        autorole_text = autorole.mention if autorole else "🔴 Выкл"
+
         embed = discord.Embed(
             title="🛡️ Экспресс-статус защиты на сервере",
             color=discord.Color.blue(),
             timestamp=datetime.utcnow()
         )
-        embed.add_field(name="Канал логов", value=log_text, inline=False)
+        embed.add_field(name="Канал логов", value=log_text, inline=True)
+        embed.add_field(name="Автороль новичкам", value=autorole_text, inline=True)
         embed.add_field(name="Анти-спам", value=icon(settings.get("anti_spam", 1)), inline=True)
         embed.add_field(name="Анти-инвайты", value=icon(settings.get("anti_invite", 1)), inline=True)
         embed.add_field(name="Анти-капс", value=icon(settings.get("anti_caps", 1)), inline=True)
@@ -363,6 +375,82 @@ class Moderation(commands.Cog):
         await set_log_channel(interaction.guild.id, channel.id)
         await interaction.response.send_message(f"✅ Канал логов автомодерации установлен на {channel.mention}.")
 
+    # ------------------- АВТОВЫДАЧА РОЛЕЙ (AUTOROLE) -------------------
+
+    autorole = app_commands.Group(
+        name="autorole",
+        description="Настройка автоматической выдачи роли новым участникам",
+        default_permissions=discord.Permissions(administrator=True)
+    )
+
+    @autorole.command(name="set", description="Установить роль, которая будет выдаваться каждому новичку при входе")
+    @app_commands.describe(role="Роль для автоматической выдачи")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def autorole_set(self, interaction: discord.Interaction, role: discord.Role):
+        bot_member = interaction.guild.me
+        if not bot_member.guild_permissions.manage_roles:
+            await interaction.response.send_message(
+                "❌ У бота нет права **Управление ролями** (`Manage Roles`)!\n"
+                "Пожалуйста, выдайте роли бота это право в настройках сервера.",
+                ephemeral=True
+            )
+            return
+
+        if role.is_default():
+            await interaction.response.send_message("❌ Роль `@everyone` не может быть назначена в качестве автороли.", ephemeral=True)
+            return
+
+        if role.managed:
+            await interaction.response.send_message("❌ Эта роль управляется внешней интеграцией или ботом и не может быть назначена.", ephemeral=True)
+            return
+
+        if role >= bot_member.top_role and interaction.guild.owner_id != interaction.user.id:
+            await interaction.response.send_message(
+                f"⚠️ Роль {role.mention} находится на том же уровне или выше высшей роли бота ({bot_member.top_role.mention}).\n"
+                "Переместите роль бота **выше** этой роли в списке ролей сервера (Настройки сервера -> Роли), чтобы бот мог её выдавать!",
+                ephemeral=True
+            )
+            return
+
+        await set_autorole(interaction.guild.id, role.id)
+        embed = discord.Embed(
+            title="✅ Автороль успешно установлена",
+            description=f"Каждый новый участник при заходе на сервер автоматически получит роль {role.mention}.",
+            color=discord.Color.green(),
+            timestamp=datetime.utcnow()
+        )
+        embed.add_field(name="Назначенная роль", value=f"{role.name} (`ID: {role.id}`)", inline=True)
+        embed.add_field(name="Администратор", value=interaction.user.mention, inline=True)
+        await interaction.response.send_message(embed=embed)
+
+    @autorole.command(name="remove", description="Отключить автоматическую выдачу роли новичкам")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def autorole_remove(self, interaction: discord.Interaction):
+        await set_autorole(interaction.guild.id, 0)
+        await interaction.response.send_message("❌ Автовыдача роли новым участникам отключена.", ephemeral=True)
+
+    @autorole.command(name="status", description="Посмотреть текущую настроенную автороль для новичков")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def autorole_status(self, interaction: discord.Interaction):
+        settings = await get_guild_settings(interaction.guild.id)
+        role_id = settings.get("autorole_id", 0)
+        if role_id:
+            role = interaction.guild.get_role(role_id)
+            if role:
+                embed = discord.Embed(
+                    title="🏷️ Автороль для новых участников",
+                    description=f"Текущая настроенная автороль: {role.mention} (`{role.id}`).",
+                    color=discord.Color.blue(),
+                    timestamp=datetime.utcnow()
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+        await interaction.response.send_message(
+            "ℹ️ Автороль для новичков сейчас **не настроена**.\nИспользуйте команду `/autorole set <роль>`, чтобы включить её.",
+            ephemeral=True
+        )
+
+
     @app_commands.command(name="automod_toggle", description="Включить или выключить модуль автомодерации")
     @app_commands.describe(
         feature="Модуль для переключения",
@@ -390,6 +478,10 @@ class Moderation(commands.Cog):
         log_channel = interaction.guild.get_channel(settings.get("log_channel_id", 0))
         log_text = log_channel.mention if log_channel else "Не настроен"
 
+        autorole_id = settings.get("autorole_id", 0)
+        autorole = interaction.guild.get_role(autorole_id) if autorole_id else None
+        autorole_text = autorole.mention if autorole else "🔴 Не настроена"
+
         def icon(val):
             return "🟢 Включено" if val else "🔴 Выключено"
 
@@ -398,7 +490,8 @@ class Moderation(commands.Cog):
             color=discord.Color.blue(),
             timestamp=datetime.utcnow()
         )
-        embed.add_field(name="Канал логов", value=log_text, inline=False)
+        embed.add_field(name="Канал логов", value=log_text, inline=True)
+        embed.add_field(name="Автороль новичкам", value=autorole_text, inline=True)
         embed.add_field(name="Анти-спам / Флуд", value=icon(settings.get("anti_spam", 1)), inline=True)
         embed.add_field(name="Анти-инвайты Discord", value=icon(settings.get("anti_invite", 1)), inline=True)
         embed.add_field(name="Анти-капс", value=icon(settings.get("anti_caps", 1)), inline=True)

@@ -516,6 +516,48 @@ class AutoMod(commands.Cog):
                     pass
                 return
 
+    # ------------------- АВТОВЫДАЧА РОЛИ НОВИЧКАМ (AUTOROLE) -------------------
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        """Автоматическая выдача роли новым участникам при заходе на сервер."""
+        if member.bot:
+            return
+
+        try:
+            settings = await get_guild_settings(member.guild.id)
+            autorole_id = settings.get("autorole_id", 0)
+            if not autorole_id:
+                return
+
+            role = member.guild.get_role(autorole_id)
+            if not role:
+                return
+
+            bot_member = member.guild.me
+            if not bot_member.guild_permissions.manage_roles:
+                return
+
+            # Проверка иерархии ролей (роль бота должна быть выше)
+            if role >= bot_member.top_role:
+                return
+
+            await member.add_roles(role, reason="ShieldGuard: Автовыдача роли новому участнику (AutoRole)")
+
+            # Отправка структурированного лога в канал аудита
+            await self.send_log_embed(
+                member.guild,
+                member,
+                "Автовыдача роли (AutoRole)",
+                f"Новому участнику {member.mention} при заходе на сервер успешно выдана роль {role.mention}.",
+                color=discord.Color.green()
+            )
+        except discord.Forbidden:
+            pass
+        except Exception as e:
+            print(f"⚠️ [AutoRole] Ошибка при выдаче роли новому участнику: {e}")
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(AutoMod(bot))
+

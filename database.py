@@ -31,7 +31,8 @@ async def init_db(db_path: str = DB_PATH) -> None:
                 anti_mass_mention INTEGER DEFAULT 1,
                 ignore_admins INTEGER DEFAULT 1,
                 anti_nsfw INTEGER DEFAULT 1,
-                anti_toxicity INTEGER DEFAULT 1
+                anti_toxicity INTEGER DEFAULT 1,
+                autorole_id INTEGER DEFAULT 0
             )
             """
         )
@@ -46,6 +47,10 @@ async def init_db(db_path: str = DB_PATH) -> None:
             pass
         try:
             await db.execute("ALTER TABLE guild_settings ADD COLUMN anti_toxicity INTEGER DEFAULT 1")
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE guild_settings ADD COLUMN autorole_id INTEGER DEFAULT 0")
         except Exception:
             pass
         await db.commit()
@@ -140,13 +145,14 @@ async def get_guild_settings(guild_id: int, db_path: str = DB_PATH) -> dict:
             "anti_mass_mention": 1,
             "ignore_admins": 1,
             "anti_nsfw": 1,
-            "anti_toxicity": 1
+            "anti_toxicity": 1,
+            "autorole_id": 0
         }
         await db.execute(
             """
             INSERT OR IGNORE INTO guild_settings 
-            (guild_id, log_channel_id, anti_spam, anti_invite, anti_caps, anti_badwords, anti_mass_mention, ignore_admins, anti_nsfw, anti_toxicity)
-            VALUES (?, 0, 1, 1, 1, 1, 1, 1, 1, 1)
+            (guild_id, log_channel_id, anti_spam, anti_invite, anti_caps, anti_badwords, anti_mass_mention, ignore_admins, anti_nsfw, anti_toxicity, autorole_id)
+            VALUES (?, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0)
             """,
             (guild_id,)
         )
@@ -183,3 +189,15 @@ async def set_feature_toggle(guild_id: int, feature: str, enabled: bool, db_path
             (val, guild_id)
         )
         await db.commit()
+
+
+async def set_autorole(guild_id: int, role_id: int, db_path: str = DB_PATH) -> None:
+    """Устанавливает или отключает автороль для новых участников (0 - выключено)."""
+    async with aiosqlite.connect(db_path) as db:
+        await get_guild_settings(guild_id, db_path)
+        await db.execute(
+            "UPDATE guild_settings SET autorole_id = ? WHERE guild_id = ?",
+            (role_id, guild_id)
+        )
+        await db.commit()
+
