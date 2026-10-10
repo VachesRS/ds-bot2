@@ -25,6 +25,7 @@ from cloud_sync import sync_guild_settings_to_discord
 logger = logging.getLogger("Dashboard")
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(TEMPLATES_DIR),
     autoescape=jinja2.select_autoescape(["html", "xml"])
@@ -125,6 +126,10 @@ class DashboardServer:
 
     def _setup_routes(self):
         self.app.router.add_get("/health", self.handle_health)
+        self.app.router.add_get("/favicon.ico", self.handle_favicon)
+        self.app.router.add_get("/favicon.png", self.handle_favicon)
+        if os.path.exists(STATIC_DIR):
+            self.app.router.add_static("/static/", path=STATIC_DIR, name="static")
         self.app.router.add_get("/", self.handle_index)
         self.app.router.add_get("/login", self.handle_login)
         self.app.router.add_get("/callback", self.handle_callback)
@@ -134,6 +139,16 @@ class DashboardServer:
         self.app.router.add_post("/api/guild/{guild_id}/sync", self.handle_api_sync)
         self.app.router.add_post("/api/guild/{guild_id}/embed", self.handle_api_send_embed)
         self.app.router.add_post("/api/guild/{guild_id}/level_rewards", self.handle_api_level_rewards)
+
+    async def handle_favicon(self, request: web.Request) -> web.Response:
+        """Отдает официальный фавикон бота для вкладок браузера."""
+        fav_png = os.path.join(STATIC_DIR, "favicon.png")
+        fav_ico = os.path.join(STATIC_DIR, "favicon.ico")
+        if request.path.endswith(".ico") and os.path.exists(fav_ico):
+            return web.FileResponse(fav_ico, headers={"Content-Type": "image/x-icon", "Cache-Control": "public, max-age=86400"})
+        if os.path.exists(fav_png):
+            return web.FileResponse(fav_png, headers={"Content-Type": "image/png", "Cache-Control": "public, max-age=86400"})
+        return web.Response(status=404)
 
     def _common_context(self, request: web.Request, user: Optional[dict] = None) -> dict:
         """Общие переменные для всех шаблонов."""
