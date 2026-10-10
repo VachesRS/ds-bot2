@@ -131,6 +131,8 @@ class DashboardServer:
         if os.path.exists(STATIC_DIR):
             self.app.router.add_static("/static/", path=STATIC_DIR, name="static")
         self.app.router.add_get("/", self.handle_index)
+        self.app.router.add_get("/terms", self.handle_terms)
+        self.app.router.add_get("/privacy", self.handle_privacy)
         self.app.router.add_get("/login", self.handle_login)
         self.app.router.add_get("/callback", self.handle_callback)
         self.app.router.add_get("/logout", self.handle_logout)
@@ -175,6 +177,20 @@ class DashboardServer:
     async def handle_health(self, request: web.Request) -> web.Response:
         """Health-check эндпоинт для Render и UptimeRobot."""
         return web.Response(text="Kobi Bot & Dashboard are healthy!", content_type="text/plain")
+
+    async def handle_terms(self, request: web.Request) -> web.Response:
+        """Страница условий использования (Terms of Service)."""
+        session_data = verify_session(request.cookies.get(COOKIE_NAME))
+        ctx = self._common_context(request, user=session_data)
+        template = jinja_env.get_template("terms.html")
+        return web.Response(text=template.render(**ctx), content_type="text/html")
+
+    async def handle_privacy(self, request: web.Request) -> web.Response:
+        """Страница политики конфиденциальности (Privacy Policy)."""
+        session_data = verify_session(request.cookies.get(COOKIE_NAME))
+        ctx = self._common_context(request, user=session_data)
+        template = jinja_env.get_template("privacy.html")
+        return web.Response(text=template.render(**ctx), content_type="text/html")
 
     async def handle_index(self, request: web.Request) -> web.Response:
         """Главная страница: лендинг или список серверов."""

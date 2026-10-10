@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Kobi — Политика конфиденциальности (Privacy Policy){% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 sm:py-12">
+    <div class="mb-10 text-center sm:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>Защита данных</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3">Политика конфиденциальности (Privacy Policy)</h1>
+        <p class="text-sm text-gray-400">Дата последнего обновления: 10 октября 2026 г. • Разработано командой <b>VRST Team</b></p>
+    </div>
+
+    <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8 text-gray-300 text-sm leading-relaxed">
+        
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-circle-info text-emerald-400"></i>
+                <span>1. Общие положения</span>
+            </h2>
+            <p>
+                Команда <b>VRST Team</b> («мы», «наш») уважает право пользователей на конфиденциальность. Настоящая Политика конфиденциальности объясняет, какие данные обрабатываются и сохраняются ботом <b>Kobi</b> («Бот») и связанной веб-панелью управления, как они используются и как вы можете управлять ими.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-database text-emerald-400"></i>
+                <span>2. Какие данные мы собираем</span>
+            </h2>
+            <p class="mb-3">
+                Бот собирает <b>только минимально необходимый объем технической информации</b>, требуемый для функционирования заявленных возможностей:
+            </p>
+            <ul class="list-disc list-inside space-y-2 text-gray-400 ml-2">
+                <li>
+                    <b class="text-white">Идентификаторы Discord (ID):</b> Числовые ID серверов (Guild ID), текстовых и голосовых каналов (Channel ID), ролей (Role ID) и пользователей (User ID) для привязки настроек, ролей и уровней.
+                </li>
+                <li>
+                    <b class="text-white">Данные системы уровней (XP):</b> Количество набранных очков опыта и текущий уровень пользователя на конкретном сервере.
+                </li>
+                <li>
+                    <b class="text-white">Логи автомодерации:</b> Краткая запись о зафиксированных нарушениях (ID нарушителя, тип нарушения: спам/мат/NSFW, дата и принятая мера) для отображения администраторам в канале логов.
+                </li>
+                <li>
+                    <b class="text-white">Настройки сервера:</b> Выбранные администратором параметры (канал логов, канал приветствий, статус фильтров, автороли).
+                </li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-lock text-emerald-400"></i>
+                <span>3. Что мы НИКОГДА не сохраняем</span>
+            </h2>
+            <ul class="list-disc list-inside space-y-1.5 text-gray-400 ml-2">
+                <li>Мы <b class="text-white">не храним</b> текст вашей обычной переписки и не ведем лог приватных сообщений. Текст сообщений анализируется в оперативной памяти в реальном времени исключительно для автомодерации и сразу удаляется.</li>
+                <li>Мы <b class="text-white">не записываем</b> и не сохраняем аудиопотоки из голосовых каналов (Voice XP учитывает только статус подключения и длительность нахождения в войсе).</li>
+                <li>Мы <b class="text-white">не имеем доступа</b> к вашим паролям, платежным данным или токенам учетных записей Discord.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-shield-virus text-emerald-400"></i>
+                <span>4. Передача данных третьим лицам</span>
+            </h2>
+            <p>
+                Команда <b>VRST Team</b> гарантирует: мы <b>никогда не продаем, не передаем и не сдаем в аренду</b> данные пользователей или серверов сторонним коммерческим компаниям, рекламным сетям или аналитическим сервисам. Вся информация обрабатывается строго внутри инфраструктуры Kobi и официального API Discord.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-trash-can text-emerald-400"></i>
+                <span>5. Удаление данных (Право на забвение)</span>
+            </h2>
+            <p class="mb-2">
+                Вы имеете полное право запросить удаление всех связанных с вами данных:
+            </p>
+            <ul class="list-disc list-inside space-y-1.5 text-gray-400 ml-2">
+                <li>При удалении (кике) бота с сервера все настройки и данные этого сервера могут быть стерты по запросу администратора.</li>
+                <li>Любой пользователь может обратиться к разработчикам VRST Team с запросом на полное стирание его личной статистики опыта (XP) и записей модерации.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-envelope text-emerald-400"></i>
+                <span>6. Контакты</span>
+            </h2>
+            <p>
+                По вопросам конфиденциальности и удаления данных обращайтесь к разработчикам <b>VRST Team</b> через официальный сервер сообщества бота или панель управления.
+            </p>
+        </section>
+
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="/" class="inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Вернуться на главную страницу</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

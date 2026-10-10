@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Kobi — Условия использования (Terms of Service){% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 sm:py-12">
+    <div class="mb-10 text-center sm:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-4">
+            <i class="fa-solid fa-file-contract"></i>
+            <span>Юридическая информация</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3">Условия использования (Terms of Service)</h1>
+        <p class="text-sm text-gray-400">Дата последнего обновления: 10 октября 2026 г. • Разработано командой <b>VRST Team</b></p>
+    </div>
+
+    <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8 text-gray-300 text-sm leading-relaxed">
+        
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-handshake text-brand-400"></i>
+                <span>1. Принятие условий</span>
+            </h2>
+            <p>
+                Используя многофункционального Discord-бота <b>Kobi</b> («Бот») или связанную с ним веб-панель управления («Сервис»), вы соглашаетесь соблюдать настоящие Условия использования. Если вы не согласны с какими-либо положениями, пожалуйста, прекратите использование Бота и удалите его со своего сервера Discord.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-shield-halved text-brand-400"></i>
+                <span>2. Правила использования и ограничения</span>
+            </h2>
+            <p class="mb-3">
+                При использовании Kobi вы обязуетесь строго соблюдать <a href="https://discord.com/terms" target="_blank" class="text-brand-400 underline hover:text-brand-300">Условия обслуживания Discord</a> и <a href="https://discord.com/guidelines" target="_blank" class="text-brand-400 underline hover:text-brand-300">Правила сообщества Discord</a>.
+            </p>
+            <p class="mb-2 font-semibold text-white">Запрещается:</p>
+            <ul class="list-disc list-inside space-y-1.5 text-gray-400 ml-2">
+                <li>Использовать Бота для рассылки спама, рейдов, вредоносного ПО или любых мошеннических действий.</li>
+                <li>Предпринимать попытки взлома, обратной разработки (reverse engineering) или проведения атак типа «Отказ в обслуживании» (DDoS) на серверы Kobi.</li>
+                <li>Использовать автоматизированные скрипты для неестественной накрутки опыта (XP) или манипуляции рангами.</li>
+                <li>Использовать конструктор сообщений или приветствия для распространения запрещенного или противозаконного контента.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-server text-brand-400"></i>
+                <span>3. Предоставление функций</span>
+            </h2>
+            <p>
+                Команда <b>VRST Team</b> предоставляет функции автомодерации, системы уровней, ролей по кнопкам, временных голосовых каналов и веб-панели управления «как есть» (AS IS). Мы прилагаем максимальные усилия для обеспечения круглосуточной стабильности (99.9% Uptime), однако не гарантируем абсолютное отсутствие перебоев, вызванных сбоями в API Discord или хостинг-провайдеров.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-copyright text-brand-400"></i>
+                <span>4. Интеллектуальная собственность</span>
+            </h2>
+            <p>
+                Все права на исходный код бота Kobi, фирменного маскота, логотипы, веб-интерфейс и бренд <b>VRST Team</b> принадлежат команде разработчиков VRST Team. Все права защищены.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-ban text-brand-400"></i>
+                <span>5. Прекращение доступа</span>
+            </h2>
+            <p>
+                Администрация VRST Team оставляет за собой право ограничить или заблокировать доступ к Боту и веб-панели для серверов или пользователей, грубо нарушающих данные Условия или Правила сообщества Discord, без предварительного уведомления.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <i class="fa-solid fa-envelope text-brand-400"></i>
+                <span>6. Контакты и обратная связь</span>
+            </h2>
+            <p>
+                По любым вопросам, связанным с настоящими Условиями использования или работой Kobi, вы можете обратиться к команде разработчиков <b>VRST Team</b> через наш сервер поддержки Discord или панель управления ботом.
+            </p>
+        </section>
+
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="/" class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors font-medium">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Вернуться на главную страницу</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
