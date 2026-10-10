@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки {{ guild.name }} — ShieldGuard{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Навигация назад -->
+    <div class="mb-6">
+        <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Назад ко всем серверам</span>
+        </a>
+    </div>
+
+    <!-- Шапка сервера -->
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border border-white/10">
+        <div class="flex items-center gap-4">
+            {% if guild.icon_url %}
+            <img src="{{ guild.icon_url }}" alt="{{ guild.name }}" class="w-16 h-16 rounded-2xl object-cover border border-white/10 shadow-lg">
+            {% else %}
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-bold text-2xl text-white shadow-lg">
+                {{ guild.name[:2]|upper }}
+            </div>
+            {% endif %}
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-white">{{ guild.name }}</h1>
+                <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-400">
+                    <span class="bg-white/5 border border-white/10 px-2 py-0.5 rounded font-mono">ID: {{ guild.id }}</span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-users text-gray-500 mr-1"></i>{{ guild.member_count }} участников</span>
+                    <span>•</span>
+                    <span class="text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-cloud"></i> Облако Discord активно
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button onclick="syncToDiscord()" id="sync-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 px-4 py-2.5 rounded-xl transition-all text-sm font-medium">
+                <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+                <span>Синхронизировать</span>
+            </button>
+            <button onclick="saveSettings()" id="save-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all text-sm font-semibold hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Сохранить</span>
+            </button>
+        </div>
+    </div>
+
+    <form id="settings-form" onsubmit="event.preventDefault(); saveSettings();" class="space-y-8">
+        <!-- Блок 1: Автороли и Логирование -->
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-brand-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-sliders"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">Основные каналы и роли</h2>
+                    <p class="text-xs text-gray-400">Автовыдача роли новичкам и текстовый канал для аудита</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Выбор автороли -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-200 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-user-tag text-emerald-400"></i>
+                        <span>Автовыдача роли новичкам (AutoRole)</span>
+                    </label>
+                    <select name="autorole_id" id="autorole_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
+                        <option value="0" {% if settings.autorole_id == 0 %}selected{% endif %}>🔴 Отключено (не выдавать)</option>
+                        {% for role in guild.roles %}
+                            {% if not role.is_default and not role.managed %}
+                            <option value="{{ role.id }}" {% if settings.autorole_id == role.id %}selected{% endif %}>
+                                @{{ role.name }}
+                            </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Роль автоматически выдается каждому новому человеку при входе на сервер.
+                    </p>
+                </div>
+
+                <!-- Выбор канала логов -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-200 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-blue-400"></i>
+                        <span>Канал логов модерации (/setlogs)</span>
+                    </label>
+                    <select name="log_channel_id" id="log_channel_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
+                        <option value="0" {% if settings.log_channel_id == 0 %}selected{% endif %}>🔴 Логи отключены</option>
+                        {% for ch in guild.text_channels %}
+                        <option value="{{ ch.id }}" {% if settings.log_channel_id == ch.id %}selected{% endif %}>
+                            #{{ ch.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">
+                        В этот канал бот отправляет структурированные отчеты об удалении NSFW, спама и оскорблений.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок 2: Модули автомодерации (Тумблеры) -->
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-shield-virus"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">Модули защиты и ИИ-фильтры</h2>
+                    <p class="text-xs text-gray-400">Включайте и отключайте системы защиты сервера одним щелчком</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <!-- 1. ИИ Оскорбления (RuBERT) -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white flex items-center gap-2">
+                                ИИ-детектор оскорблений (RuBERT-Tiny)
+                                <span class="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono">ONNX AI</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Локальная языковая модель анализирует смысл текста на русском языке, удаляет оскорбления и дает мут на 5 минут.
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_toxicity" class="sr-only peer" {% if settings.anti_toxicity %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 2. ИИ NSFW 18+ (ResNet-50) -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-eye-slash"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white flex items-center gap-2">
+                                Фильтр 18+ контента (OpenNSFW ResNet-50)
+                                <span class="text-[10px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-mono">VISION AI</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Покадровая детекция картинок, GIF (Tenor/Klipy) и <b>видео (.mp4, .webm, .mov)</b> локальной нейросетью.
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_nsfw" class="sr-only peer" {% if settings.anti_nsfw %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 3. Анти-спам / Флуд -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white">
+                                Защита от спама и флуда
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Блокирует флуд (5+ сообщений) и дубликаты. Мгновенно <b>удаляет все сообщения спамера за последние 30 секунд</b> и выдает мут.
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_spam" class="sr-only peer" {% if settings.anti_spam %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 4. Анти-инвайты -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-link-slash"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white">
+                                Блокировка ссылок-приглашений Discord (Анти-инвайт)
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Удаляет чужие ссылки на сторонние Discord-серверы (discord.gg, discord.com/invite) для предотвращения рекламы.
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_invite" class="sr-only peer" {% if settings.anti_invite %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 5. Анти-капс -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-font"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white">
+                                Фильтр чрезмерного Caps Lock (Анти-капс)
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Удаляет раздражающие сообщения, содержащие более 70% заглавных букв (при длине текста от 10 символов).
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_caps" class="sr-only peer" {% if settings.anti_caps %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 6. Анти-массменшн -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white">
+                                Защита от массовых упоминаний (Массменшн)
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Предотвращает рейды: удаляет пинги @everyone, @here и сообщения с более чем 4 упоминаниями пользователей (тайм-аут на 15 мин).
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="anti_mass_mention" class="sr-only peer" {% if settings.anti_mass_mention %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <!-- 7. Иммунитет модераторов -->
+                <div class="glass-card p-4 sm:p-5 rounded-2xl flex items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-gray-500/20 text-gray-300 flex items-center justify-center text-base mt-0.5">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-white">
+                                Иммунитет администраторов и модераторов
+                            </div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                Не применять фильтры автомодерации к участникам с правами администратора или управления сообщениями.
+                            </div>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="ignore_admins" class="sr-only peer" {% if settings.ignore_admins %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-discord-darkest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопка сохранения внизу -->
+        <div class="flex justify-end gap-4">
+            <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-8 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all font-semibold text-base hover:scale-105 active:scale-95">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Сохранить все изменения</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const GUILD_ID = "{{ guild.id }}";
+
+    async function saveSettings() {
+        const saveBtn = document.getElementById('save-btn');
+        const originalHtml = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Сохранение...</span>';
+
+        const form = document.getElementById('settings-form');
+        const formData = new FormData(form);
+
+        const payload = {
+            autorole_id: parseInt(document.getElementById('autorole_id').value, 10) || 0,
+            log_channel_id: parseInt(document.getElementById('log_channel_id').value, 10) || 0,
+            anti_toxicity: form.elements['anti_toxicity'].checked ? 1 : 0,
+            anti_nsfw: form.elements['anti_nsfw'].checked ? 1 : 0,
+            anti_spam: form.elements['anti_spam'].checked ? 1 : 0,
+            anti_invite: form.elements['anti_invite'].checked ? 1 : 0,
+            anti_caps: form.elements['anti_caps'].checked ? 1 : 0,
+            anti_mass_mention: form.elements['anti_mass_mention'].checked ? 1 : 0,
+            ignore_admins: form.elements['ignore_admins'].checked ? 1 : 0,
+        };
+
+        try {
+            const resp = await fetch(`/api/guild/${GUILD_ID}/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const res = await resp.json();
+            if (resp.ok && res.success) {
+                showToast('Настройки успешно сохранены и применены в Discord!', 'success');
+            } else {
+                showToast(res.error || 'Ошибка при сохранении настроек', 'error');
+            }
+        } catch (e) {
+            showToast('Сетевая ошибка при сохранении: ' + e, 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalHtml;
+        }
+    }
+
+    async function syncToDiscord() {
+        const syncBtn = document.getElementById('sync-btn');
+        const originalHtml = syncBtn.innerHTML;
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Синхронизация...</span>';
+
+        try {
+            const resp = await fetch(`/api/guild/${GUILD_ID}/sync`, { method: 'POST' });
+            const res = await resp.json();
+            if (resp.ok && res.success) {
+                showToast('Резервная копия настроек обновлена в канале 🔒-shieldguard-data!', 'success');
+            } else {
+                showToast(res.error || 'Ошибка синхронизации', 'error');
+            }
+        } catch (e) {
+            showToast('Сетевая ошибка синхронизации: ' + e, 'error');
+        } finally {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = originalHtml;
+        }
+    }
+</script>
+{% endblock %}

@@ -2,28 +2,7 @@ import asyncio
 import os
 import sys
 import logging
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from dotenv import load_dotenv
-
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"Bot is alive and running!")
-
-    def log_message(self, format, *args):
-        # Отключаем логирование HTTP-запросов, чтобы не засорять логи бота
-        return
-
-def start_health_server():
-    try:
-        port = int(os.getenv("PORT", 10000))
-        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
-        server.serve_forever()
-    except Exception as e:
-        logger.warning(f"Веб-сервер проверки здоровья не запустился: {e}")
 
 import discord
 from discord.ext import commands
@@ -61,6 +40,7 @@ class AutoModBot(commands.Bot):
             intents=intents,
             help_command=None
         )
+        self.web_runner = None
 
     async def setup_hook(self):
         """Асинхронная инициализация перед запуском бота."""
@@ -68,7 +48,16 @@ class AutoModBot(commands.Bot):
         logger.info("Инициализация базы данных SQLite...")
         await init_db()
 
-        # 2. Загрузка когов (модулей)
+        # 2. Запуск веб-панели управления (Dashboard) и health check
+        try:
+            from web.server import start_web_server
+            port = int(os.getenv("PORT", 10000))
+            self.web_runner = await start_web_server(self, port=port)
+            logger.info(f"Веб-интерфейс Dashboard успешно запущен на порту {port}")
+        except Exception as e:
+            logger.error(f"Не удалось запустить веб-интерфейс Dashboard: {e}")
+
+        # 3. Загрузка когов (модулей)
         cogs = ["cogs.automod", "cogs.moderation"]
         for cog in cogs:
             try:
@@ -77,7 +66,7 @@ class AutoModBot(commands.Bot):
             except Exception as e:
                 logger.error(f"Не удалось загрузить модуль {cog}: {e}")
 
-        # 3. Синхронизация слэш-команд с Discord
+        # 4. Синхронизация слэш-команд с Discord
         try:
             synced = await self.tree.sync()
             logger.info(f"Синхронизировано {len(synced)} слэш-команд(ы) глобально.")
@@ -129,7 +118,15 @@ class AutoModBot(commands.Bot):
         except Exception as e:
             logger.error(f"Ошибка при сохранении настроек для нового сервера {guild.id}: {e}")
 
-
+    async def close(self):
+        """Очистка ресурсов при завершении работы бота."""
+        if self.web_runner:
+            try:
+                await self.web_runner.cleanup()
+                logger.info("Веб-сервер Dashboard корректно остановлен.")
+            except Exception as e:
+                logger.warning(f"Ошибка при остановке веб-сервера: {e}")
+        await super().close()
 
 
 def main():
@@ -141,10 +138,6 @@ def main():
         print("3. Убедитесь, что в Discord Developer Portal включен 'Message Content Intent'.")
         print("!" * 60 + "\n")
         return
-
-    # Запуск фонового веб-сервера для совместимости с облачными хостингами (Render/Koyeb)
-    threading.Thread(target=start_health_server, daemon=True).start()
-    logger.info("Фоновый веб-сервер проверки работоспособности запущен.")
 
     while True:
         try:

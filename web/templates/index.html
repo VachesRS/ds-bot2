@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}ShieldGuard — Выбор сервера{% endblock %}
+
+{% block content %}
+{% if not user %}
+<!-- Лендинг для неавторизованных пользователей -->
+<div class="py-12 sm:py-16 text-center max-w-4xl mx-auto">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-6">
+        <i class="fa-solid fa-sparkles"></i>
+        <span>Автономная ИИ-безопасность нового поколения</span>
+    </div>
+
+    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6">
+        Управляйте защитой сервера <br>
+        <span class="bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">в один клик из браузера</span>
+    </h1>
+
+    <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
+        Веб-панель ShieldGuard позволяет в реальном времени включать локальные нейросети, настраивать автороли для новичков, фильтровать медиа и контролировать аудит без ввода команд в Discord.
+    </p>
+
+    <!-- Кнопка входа -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+        <a href="/login" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-discord-blurple hover:bg-indigo-600 text-white font-semibold px-8 py-3.5 rounded-2xl shadow-xl shadow-discord-blurple/30 transition-all hover:scale-105 active:scale-95 text-base">
+            <i class="fa-brands fa-discord text-xl"></i>
+            <span>Войти через Discord</span>
+        </a>
+    </div>
+
+    {% if not oauth_configured %}
+    <!-- Баннер настройки Discord OAuth2 (если SECRET еще не указан) -->
+    <div class="glass-panel p-6 rounded-2xl text-left border border-amber-500/30 bg-amber-500/5 mb-16">
+        <div class="flex items-start gap-4">
+            <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 text-lg">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-base font-semibold text-white mb-1">Требуется указать Client Secret для OAuth2</h3>
+                <p class="text-xs text-gray-300 mb-4">
+                    Чтобы кнопка «Войти через Discord» работала, боту нужен секретный ключ приложения. Выполните 3 простых шага:
+                </p>
+                <ol class="text-xs text-gray-300 space-y-2 list-decimal list-inside bg-black/30 p-4 rounded-xl font-mono">
+                    <li>Откройте <a href="https://discord.com/developers/applications/{{ client_id }}/oauth2" target="_blank" class="text-brand-400 underline">Discord Developer Portal ➔ OAuth2</a>.</li>
+                    <li>В блоке <b>Client Secret</b> нажмите <i>«Reset Secret»</i> и скопируйте ключ.</li>
+                    <li>В блоке <b>Redirects</b> добавьте адрес: <code class="text-emerald-400 bg-white/5 px-1 py-0.5 rounded">{{ redirect_uri }}</code> и сохраните.</li>
+                    <li>В панели <b>Render</b> (Environment) добавьте переменную: <code class="text-emerald-400">DISCORD_CLIENT_SECRET=ваш_секрет</code>.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Сетка возможностей -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+        <div class="glass-card p-6 rounded-2xl">
+            <div class="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Локальные нейросети</h3>
+            <p class="text-sm text-gray-400">
+                RuBERT-Tiny Toxicity для выявления оскорблений и ResNet-50 OpenNSFW для покадрового анализа картинок, GIF и видео.
+            </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-user-tag"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Автороли и приветствия</h3>
+            <p class="text-sm text-gray-400">
+                Автоматическая выдача роли новым участникам сразу при заходе на сервер с защитой от ботов и проверкой иерархии.
+            </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl">
+            <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Умный анти-спам</h3>
+            <p class="text-sm text-gray-400">
+                Моментальное удаление сообщений спамера за последние 30 секунд (Bulk Delete), блокировка ссылок и массменшнов.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% else %}
+
+<!-- Список серверов для авторизованного пользователя -->
+<div>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-white">Панель управления</h1>
+            <p class="text-sm text-gray-400">Выберите сервер с правами администратора для конфигурации ShieldGuard</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-gray-300">
+                Доступных серверов: <b class="text-white">{{ admin_guilds|length }}</b>
+            </span>
+        </div>
+    </div>
+
+    {% if admin_guilds %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for g in admin_guilds %}
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between border {% if g.has_bot %}border-indigo-500/30 bg-gradient-to-b from-indigo-500/5 to-transparent{% else %}border-white/5{% endif %}">
+            <div>
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        {% if g.icon_url %}
+                        <img src="{{ g.icon_url }}" alt="{{ g.name }}" class="w-12 h-12 rounded-2xl object-cover border border-white/10">
+                        {% else %}
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-brand-700 flex items-center justify-center font-bold text-lg text-white">
+                            {{ g.name[:2]|upper }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h3 class="font-bold text-white text-base line-clamp-1" title="{{ g.name }}">{{ g.name }}</h3>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                {% if g.is_owner %}
+                                <span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-medium">Владелец</span>
+                                {% else %}
+                                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-medium">Администратор</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-400 mb-6 flex items-center gap-2">
+                    {% if g.has_bot %}
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="text-emerald-400 font-medium">Бот активен на сервере</span>
+                    {% else %}
+                    <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                    <span>Бот не добавлен</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                {% if g.has_bot %}
+                <a href="/dashboard/{{ g.id }}" class="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white font-medium py-2.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 text-sm">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Настроить бота</span>
+                </a>
+                {% else %}
+                <a href="https://discord.com/oauth2/authorize?client_id={{ client_id }}&guild_id={{ g.id }}&permissions=8&scope=bot%20applications.commands" target="_blank" class="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium py-2.5 px-4 rounded-xl transition-all text-sm border border-white/10">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Пригласить ShieldGuard</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-panel p-12 rounded-3xl text-center max-w-lg mx-auto">
+        <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-2xl text-gray-400 mb-4">
+            <i class="fa-solid fa-server"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Серверы не найдены</h3>
+        <p class="text-sm text-gray-400 mb-6">
+            У вашей учетной записи нет серверов, на которых у вас есть права <b>Администратора</b> или <b>Управления сервером</b>.
+        </p>
+        <a href="/logout" class="text-xs text-brand-400 hover:underline">Войти под другим аккаунтом</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

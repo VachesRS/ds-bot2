@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ShieldGuard — Панель управления{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#1e1b4b',
+                        },
+                        discord: {
+                            blurple: '#5865F2',
+                            green: '#57F287',
+                            yellow: '#FEE75C',
+                            fuchsia: '#EB459E',
+                            red: '#ED4245',
+                            dark: '#2B2D31',
+                            darker: '#1E1F22',
+                            darkest: '#111214',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background-color: #0f1117;
+            color: #e2e8f0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .glass-panel {
+            background: rgba(30, 31, 34, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(43, 45, 49, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111214;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2b2d31;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+    <!-- Навигационная панель -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Логотип бота -->
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                    <div class="w-full h-full bg-discord-darkest rounded-[10px] flex items-center justify-center overflow-hidden">
+                        {% if bot_avatar %}
+                        <img src="{{ bot_avatar }}" alt="ShieldGuard" class="w-full h-full object-cover">
+                        {% else %}
+                        <i class="fa-solid fa-shield-halved text-brand-400 text-lg"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="font-bold text-lg text-white flex items-center gap-2">
+                        ShieldGuard
+                        <span class="text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-medium">AI BOT</span>
+                    </div>
+                    <div class="text-xs text-gray-400 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="font-mono">Online • {{ bot_latency }} ms</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Пользователь / Вход -->
+            <div class="flex items-center gap-4">
+                {% if user %}
+                <div class="flex items-center gap-3 bg-white/5 py-1.5 px-3 rounded-xl border border-white/5">
+                    <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full border border-brand-500/40">
+                    <div class="hidden sm:block text-left">
+                        <div class="text-sm font-medium text-white">{{ user.username }}</div>
+                        <div class="text-[11px] text-gray-400">ID: {{ user.id }}</div>
+                    </div>
+                    <a href="/logout" title="Выйти" class="ml-2 text-gray-400 hover:text-red-400 text-sm p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                </div>
+                {% else %}
+                <a href="/login" class="inline-flex items-center gap-2 bg-discord-blurple hover:bg-indigo-600 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-discord-blurple/25 transition-all hover:scale-105 active:scale-95 text-sm">
+                    <i class="fa-brands fa-discord text-base"></i>
+                    <span>Войти через Discord</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Подвал -->
+    <footer class="border-t border-white/5 bg-discord-darkest/50 py-6 mt-12 text-center text-xs text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-brand-400"></i>
+                <span>ShieldGuard AutoMod AI — Защита серверов Discord</span>
+            </div>
+            <div>
+                <span>Хостинг: Render • Локальные ИИ: RuBERT-Tiny & ResNet-50</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast уведомления -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const isSuccess = type === 'success';
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${
+                isSuccess ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            toast.innerHTML = `
+                <i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
