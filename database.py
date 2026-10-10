@@ -83,10 +83,16 @@ async def init_db(db_path: str = DB_PATH) -> None:
                 guild_id INTEGER PRIMARY KEY,
                 enabled INTEGER DEFAULT 1,
                 announce_channel_id INTEGER DEFAULT 0,
-                xp_rate REAL DEFAULT 1.0
+                xp_rate REAL DEFAULT 1.0,
+                voice_xp_enabled INTEGER DEFAULT 1
             )
             """
         )
+        try:
+            await db.execute("ALTER TABLE guild_level_settings ADD COLUMN voice_xp_enabled INTEGER DEFAULT 1")
+            await db.commit()
+        except Exception:
+            pass
 
         # 2. Роли по кнопкам
         await db.execute(
@@ -492,23 +498,27 @@ async def get_guild_level_settings(guild_id: int, db_path: str = DB_PATH) -> dic
         )
         row = await cursor.fetchone()
         if row:
-            return dict(row)
-        return {"guild_id": guild_id, "enabled": 1, "announce_channel_id": 0, "xp_rate": 1.0}
+            d = dict(row)
+            if "voice_xp_enabled" not in d:
+                d["voice_xp_enabled"] = 1
+            return d
+        return {"guild_id": guild_id, "enabled": 1, "announce_channel_id": 0, "xp_rate": 1.0, "voice_xp_enabled": 1}
 
 
-async def set_guild_level_settings(guild_id: int, enabled: bool, announce_channel_id: int = 0, xp_rate: float = 1.0, db_path: str = DB_PATH) -> None:
+async def set_guild_level_settings(guild_id: int, enabled: bool, announce_channel_id: int = 0, xp_rate: float = 1.0, voice_xp_enabled: bool = True, db_path: str = DB_PATH) -> None:
     """Сохраняет настройки уровней сервера."""
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
-            INSERT INTO guild_level_settings (guild_id, enabled, announce_channel_id, xp_rate)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO guild_level_settings (guild_id, enabled, announce_channel_id, xp_rate, voice_xp_enabled)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(guild_id) DO UPDATE SET
                 enabled = excluded.enabled,
                 announce_channel_id = excluded.announce_channel_id,
-                xp_rate = excluded.xp_rate
+                xp_rate = excluded.xp_rate,
+                voice_xp_enabled = excluded.voice_xp_enabled
             """,
-            (guild_id, 1 if enabled else 0, announce_channel_id, xp_rate)
+            (guild_id, 1 if enabled else 0, announce_channel_id, xp_rate, 1 if voice_xp_enabled else 0)
         )
         await db.commit()
 

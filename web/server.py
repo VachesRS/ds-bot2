@@ -492,7 +492,8 @@ class DashboardServer:
                 l_enabled = bool(int(data.get("levels_enabled", 1)))
                 l_channel = int(data.get("levels_announce_channel_id", 0))
                 l_rate = float(data.get("levels_xp_rate", 1.0))
-                await set_guild_level_settings(guild_id, l_enabled, l_channel, l_rate)
+                l_voice = bool(int(data.get("levels_voice_xp_enabled", 1)))
+                await set_guild_level_settings(guild_id, l_enabled, l_channel, l_rate, l_voice)
 
             # 6. Временные войсы (Temp Voice)
             if "temp_voice_enabled" in data:

@@ -7,7 +7,7 @@ from typing import Optional
 import aiohttp
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from database import (
@@ -169,6 +169,91 @@ class LevelsCog(commands.Cog, name="Уровни и ранги"):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.voice_xp_task.start()
+
+    def cog_unload(self):
+        self.voice_xp_task.cancel()
+
+    @tasks.loop(minutes=1)
+    async def voice_xp_task(self):
+        """Фоновый цикл начисления опыта за нахождение в голосовых каналах (Voice XP)."""
+        for guild in self.bot.guilds:
+            try:
+                # 1. Проверяем включена ли система уровней и Voice XP для сервера
+                level_settings = await get_guild_level_settings(guild.id)
+                if not level_settings.get("enabled", 1) or not level_settings.get("voice_xp_enabled", 1):
+                    continue
+
+                rate = float(level_settings.get("xp_rate", 1.0))
+
+                # 2. Перебираем голосовые и трибунные каналы
+                channels = list(guild.voice_channels) + list(guild.stage_channels)
+                for vc in channels:
+                    # Пропускаем AFK-канал сервера
+                    if guild.afk_channel and vc.id == guild.afk_channel.id:
+                        continue
+
+                    # Реальные участники без ботов
+                    human_members = [m for m in vc.members if not m.bot]
+
+                    # Анти-накрутка: если в войсе меньше 2 реальных участников, опыт не дается
+                    if len(human_members) < 2:
+                        continue
+
+                    for member in human_members:
+                        voice_state = member.voice
+                        if not voice_state:
+                            continue
+
+                        # Анти-AFK: если участник полностью заглушил звук (self_deaf или deaf), опыт не дается
+                        if voice_state.self_deaf or voice_state.deaf:
+                            continue
+
+                        # Если микрофон выключен (прослушивание) — 4-7 XP/мин, если говорит — 8-14 XP/мин
+                        is_muted = voice_state.self_mute or voice_state.mute
+                        base_xp = random.randint(4, 7) if is_muted else random.randint(8, 14)
+                        earned_xp = int(base_xp * max(rate, 0.1))
+
+                        if earned_xp <= 0:
+                            continue
+
+                        new_level, total_xp, did_level_up = await add_user_xp(guild.id, member.id, earned_xp)
+
+                        if did_level_up:
+                            # 1. Проверяем роль-награду
+                            rewards = await get_level_rewards(guild.id)
+                            for rew in rewards:
+                                if rew["level"] == new_level:
+                                    role_id = rew["role_id"]
+                                    reward_role = guild.get_role(role_id)
+                                    if reward_role and guild.me.guild_permissions.manage_roles:
+                                        try:
+                                            await member.add_roles(reward_role, reason=f"Kobi: Награда за {new_level} уровень в войсе!")
+                                        except Exception as e:
+                                            logger.warning(f"Не удалось выдать роль {reward_role.name}: {e}")
+
+                            # 2. Оповещение о повышении уровня
+                            announce_ch_id = level_settings.get("announce_channel_id", 0)
+                            announce_channel = guild.get_channel(announce_ch_id) if announce_ch_id else None
+
+                            if announce_channel and announce_channel.permissions_for(guild.me).send_messages:
+                                embed = discord.Embed(
+                                    title="🎉 Повышение уровня за общение в войсе!",
+                                    description=f"{member.mention}, отличная беседа в **{vc.name}**! Ты достиг **{new_level} уровня**!",
+                                    color=discord.Color.gold()
+                                )
+                                embed.set_thumbnail(url=member.display_avatar.url)
+                                try:
+                                    await announce_channel.send(embed=embed)
+                                except Exception:
+                                    pass
+
+            except Exception as e:
+                logger.error(f"Ошибка в цикле voice_xp_task для сервера {guild.id}: {e}")
+
+    @voice_xp_task.before_loop
+    async def before_voice_xp(self):
+        await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -394,6 +479,47 @@ class LevelsCog(commands.Cog, name="Уровни и ранги"):
                 color=discord.Color.green()
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="level_settings", description="Настройка системы уровней, множителя XP и опыта в войсе (Voice XP).")
+    @app_commands.describe(
+        enabled="Включить или выключить всю систему уровней",
+        voice_xp="Включить или выключить начисление опыта в голосовых каналах",
+        xp_rate="Множитель опыта (например, 1.0 = обычный, 1.5 = +50%, 2.0 = удвоенный)",
+        announce_channel="Канал для поздравлений о новом уровне"
+    )
+    @commands.has_permissions(administrator=True)
+    async def slash_level_settings(
+        self,
+        interaction: discord.Interaction,
+        enabled: Optional[bool] = None,
+        voice_xp: Optional[bool] = None,
+        xp_rate: Optional[float] = None,
+        announce_channel: Optional[discord.TextChannel] = None
+    ):
+        """Настройка параметров уровней и Voice XP сервера."""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ У вас нет прав Администратора.", ephemeral=True)
+            return
+
+        current = await get_guild_level_settings(interaction.guild_id)
+        new_enabled = enabled if enabled is not None else bool(current.get("enabled", 1))
+        new_voice = voice_xp if voice_xp is not None else bool(current.get("voice_xp_enabled", 1))
+        new_rate = xp_rate if xp_rate is not None else float(current.get("xp_rate", 1.0))
+        new_ch = announce_channel.id if announce_channel is not None else current.get("announce_channel_id", 0)
+
+        await set_guild_level_settings(interaction.guild_id, new_enabled, new_ch, new_rate, new_voice)
+
+        ch_text = f"<#{new_ch}>" if new_ch else "💬 В текущем канале общения"
+        embed = discord.Embed(
+            title="⚙️ Настройки системы уровней Kobi",
+            color=discord.Color.from_rgb(99, 102, 241)
+        )
+        embed.add_field(name="Система уровней", value="✅ Включена" if new_enabled else "❌ Выключена", inline=True)
+        embed.add_field(name="Голосовой опыт (Voice XP)", value="✅ Включен" if new_voice else "❌ Выключен", inline=True)
+        embed.add_field(name="Множитель опыта", value=f"`{new_rate:.1f}x`", inline=True)
+        embed.add_field(name="Канал поздравлений", value=ch_text, inline=False)
+        embed.set_footer(text="Голосовой опыт начисляется автоматически каждую минуту при общении от 2-х человек.")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

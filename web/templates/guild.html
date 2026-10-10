@@ -280,10 +280,25 @@
                         <label class="block text-sm font-medium text-gray-200 mb-2">Множитель опыта (XP Rate)</label>
                         <select name="levels_xp_rate" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
                             <option value="0.5" {% if levels.xp_rate == 0.5 %}selected{% endif %}>0.5x (Замедленный)</option>
-                            <option value="1.0" {% if levels.xp_rate == 1.0 %}selected{% endif %}>1.0x (Стандартный — 15-25 XP/мин)</option>
+                            <option value="1.0" {% if levels.xp_rate == 1.0 %}selected{% endif %}>1.0x (Стандартный)</option>
                             <option value="1.5" {% if levels.xp_rate == 1.5 %}selected{% endif %}>1.5x (Ускоренный)</option>
                             <option value="2.0" {% if levels.xp_rate == 2.0 %}selected{% endif %}>2.0x (Двойной опыт)</option>
                         </select>
+                    </div>
+
+                    <!-- Voice XP Toggle -->
+                    <div class="sm:col-span-2 pt-4 border-t border-white/5 flex items-center justify-between">
+                        <div class="pr-4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-white font-medium text-sm">Голосовой опыт (Voice XP)</span>
+                                <span class="bg-indigo-500/20 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Новинка</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Автоматическое начисление опыта за нахождение в голосовых и трибунных каналах (с умной защитой от накрутки и AFK).</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input type="checkbox" name="levels_voice_xp_enabled" value="1" class="sr-only peer" {% if levels.voice_xp_enabled %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        </label>
                     </div>
                 </div>
             </div>
