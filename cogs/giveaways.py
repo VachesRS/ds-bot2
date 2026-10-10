@@ -145,7 +145,7 @@ class GiveawaysCog(commands.Cog, name="Розыгрыши"):
                 description=f"**Приз:** {gw['prize']}\n\n❌ **Победители:** В розыгрыше никто не принял участие.",
                 color=discord.Color.red()
             )
-            embed.set_footer(text="ShieldGuard Giveaways")
+            embed.set_footer(text="Kobi Giveaways")
             if message:
                 await message.edit(embed=embed, view=None)
             await end_giveaway(gw["id"], status="ended_no_entries")
@@ -227,7 +227,7 @@ class GiveawaysCog(commands.Cog, name="Розыгрыши"):
             ),
             color=discord.Color.from_rgb(99, 102, 241)
         )
-        embed.set_footer(text="ShieldGuard • Удачи всем участникам!")
+        embed.set_footer(text="Kobi • Удачи всем участникам!")
 
         # Временная заглушка View для отправки сообщения
         temp_view = discord.ui.View()

@@ -58,11 +58,12 @@ class HelpSelect(discord.ui.Select):
 
         if category == "home":
             embed = discord.Embed(
-                title="🛡️ Панель помощи — ShieldGuard",
+                title="🐾 Панель помощи — Kobi",
                 description=(
-                    "**ShieldGuard** — автономный бот безопасности нового поколения. "
-                    "Оснащен локальной нейросетью для выявления NSFW/18+ медиа (включая GIF Tenor/Klipy), "
-                    "защитой от рейдов, флуда и полным арсеналом инструментов модератора.\n\n"
+                    "**Kobi** — многофункциональный бот и верный компаньон вашего Discord-сервера. "
+                    "Оснащен локальными нейросетями RuBERT и OpenNSFW для модерации, "
+                    "системой уровней и рангов, ролями по кнопкам, открытками приветствий, "
+                    "временными войс-комнатами, розыгрышами и удобной веб-панелью!\n\n"
                     "👉 **Выберите интересующий раздел в выпадающем меню ниже**, чтобы изучить команды."
                 ),
                 color=discord.Color.blurple(),
@@ -73,7 +74,7 @@ class HelpSelect(discord.ui.Select):
                 value=(
                     f"• **Пинг бота:** `{round(self.bot.latency * 1000)} мс`\n"
                     f"• **Серверов под защитой:** `{len(self.bot.guilds)}`\n"
-                    f"• **Формат команд:** Слэш-команды (`/`)"
+                    f"• **Формат команд:** Слэш-команды (`/`) и префикс (`!`)"
                 ),
                 inline=False
             )
@@ -81,14 +82,14 @@ class HelpSelect(discord.ui.Select):
                 name="📂 Доступные категории:",
                 value=(
                     "• 🛡️ **Команды модерации** — ручные наказания (тайм-аут, бан, кик, очистка)\n"
-                    "• ⚙️ **Настройки и аудит** — привязка канала логов и переключатели модулей\n"
+                    "• ⚙️ **Настройки и аудит** — привязка канала логов и автороли\n"
                     "• 🤖 **Система автозащиты** — как работает локальная нейросеть и фильтры"
                 ),
                 inline=False
             )
             if avatar_url:
                 embed.set_thumbnail(url=avatar_url)
-            embed.set_footer(text="ShieldGuard AutoMod • Защита сервера 24/7", icon_url=avatar_url)
+            embed.set_footer(text="🐾 Kobi Bot • На страже вашего сервера 24/7", icon_url=avatar_url)
             return embed
 
         elif category == "moderation":
@@ -558,7 +559,7 @@ class Moderation(commands.Cog):
         ok = await sync_guild_settings_to_discord(self.bot, interaction.guild)
         if ok:
             await interaction.followup.send(
-                "☁️ Все настройки сервера успешно сохранены в служебный канал `🔒-shieldguard-data`!\n"
+                "☁️ Все настройки сервера успешно сохранены в служебный канал `🔒-kobi-data`!\n"
                 "Бот будет автоматически восстанавливать их при каждом новом коммите, обновлении или перезапуске.",
                 ephemeral=True
             )

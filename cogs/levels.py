@@ -210,7 +210,7 @@ class LevelsCog(commands.Cog, name="Уровни и ранги"):
                     reward_role = guild.get_role(role_id)
                     if reward_role and guild.me.guild_permissions.manage_roles:
                         try:
-                            await author.add_roles(reward_role, reason=f"ShieldGuard: Награда за {new_level} уровень!")
+                            await author.add_roles(reward_role, reason=f"Kobi: Награда за {new_level} уровень!")
                         except Exception as e:
                             logger.warning(f"Не удалось выдать роль {reward_role.name} пользователю {author.name}: {e}")
 

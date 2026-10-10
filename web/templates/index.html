@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}ShieldGuard — Выбор сервера{% endblock %}
+{% block title %}Kobi — Выбор сервера{% endblock %}
 
 {% block content %}
 {% if not user %}
@@ -8,16 +8,16 @@
 <div class="py-12 sm:py-16 text-center max-w-4xl mx-auto">
     <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-6">
         <i class="fa-solid fa-sparkles"></i>
-        <span>Автономная ИИ-безопасность нового поколения</span>
+        <span>Многофункциональный ИИ-помощник нового поколения</span>
     </div>
 
     <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6">
-        Управляйте защитой сервера <br>
+        Управляйте сервером Discord <br>
         <span class="bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">в один клик из браузера</span>
     </h1>
 
     <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
-        Веб-панель ShieldGuard позволяет в реальном времени включать локальные нейросети, настраивать автороли для новичков, фильтровать медиа и контролировать аудит без ввода команд в Discord.
+        Веб-панель Kobi позволяет в реальном времени настраивать уровни, роли по кнопкам, открытки приветствий, временные войсы, розыгрыши и ИИ-защиту от спама и токсичности.
     </p>
 
     <!-- Кнопка входа -->
@@ -92,7 +92,7 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-white">Панель управления</h1>
-            <p class="text-sm text-gray-400">Выберите сервер с правами администратора для конфигурации ShieldGuard</p>
+            <p class="text-sm text-gray-400">Выберите сервер с правами администратора для конфигурации Kobi</p>
         </div>
         <div class="flex items-center gap-3">
             <span class="text-xs bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl text-gray-300">
@@ -148,7 +148,7 @@
                 {% else %}
                 <a href="https://discord.com/oauth2/authorize?client_id={{ client_id }}&guild_id={{ g.id }}&permissions=8&scope=bot%20applications.commands" target="_blank" class="w-full flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white font-medium py-2.5 px-4 rounded-xl transition-all text-sm border border-white/10">
                     <i class="fa-solid fa-plus"></i>
-                    <span>Пригласить ShieldGuard</span>
+                    <span>Пригласить Kobi</span>
                 </a>
                 {% endif %}
             </div>

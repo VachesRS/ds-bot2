@@ -31,8 +31,8 @@ jinja_env = jinja2.Environment(
 )
 
 # Секретный ключ для подписи сессионных кук (HMAC-SHA256)
-COOKIE_SECRET = os.getenv("DASHBOARD_SECRET_KEY", "shieldguard-secure-secret-key-2026").encode()
-COOKIE_NAME = "sg_session"
+COOKIE_SECRET = os.getenv("DASHBOARD_SECRET_KEY", "kobi-secure-secret-key-2026").encode()
+COOKIE_NAME = "kobi_session"
 
 
 def get_client_id(bot: commands.Bot) -> str:
@@ -138,7 +138,7 @@ class DashboardServer:
 
     async def handle_health(self, request: web.Request) -> web.Response:
         """Health-check эндпоинт для Render и UptimeRobot."""
-        return web.Response(text="ShieldGuard Bot & Dashboard are healthy!", content_type="text/plain")
+        return web.Response(text="Kobi Bot & Dashboard are healthy!", content_type="text/plain")
 
     async def handle_index(self, request: web.Request) -> web.Response:
         """Главная страница: лендинг или список серверов."""

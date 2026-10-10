@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Настройки {{ guild.name }} — ShieldGuard{% endblock %}
+{% block title %}Настройки {{ guild.name }} — Kobi{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto">
@@ -534,7 +534,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Текст внизу (Footer)</label>
-                            <input type="text" id="embed-footer" oninput="updateEmbedPreview()" placeholder="ShieldGuard Announcements" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
+                            <input type="text" id="embed-footer" oninput="updateEmbedPreview()" placeholder="Kobi Announcements" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
                         </div>
                     </div>
 
@@ -560,7 +560,7 @@
                                 <img id="preview-image" src="" class="rounded max-h-48 w-full object-cover">
                             </div>
                             <div id="preview-footer" class="text-[11px] text-gray-400 flex items-center gap-1.5 pt-2 border-t border-white/5">
-                                <span>ShieldGuard Announcements</span>
+                                <span>Kobi Announcements</span>
                             </div>
                         </div>
                     </div>
@@ -652,7 +652,7 @@ async function syncToDiscord() {
         const resp = await fetch(`/api/guild/${GUILD_ID}/sync`, { method: 'POST' });
         const res = await resp.json();
         if (res.success) {
-            showToast('Облачный канал 🔒-shieldguard-data успешно обновлен!', 'success');
+            showToast('Облачный канал 🔒-kobi-data успешно обновлен!', 'success');
         } else {
             showToast(res.error || 'Ошибка при синхронизации', 'error');
         }
@@ -669,7 +669,7 @@ function updateEmbedPreview() {
     const title = document.getElementById('embed-title').value.trim() || 'Заголовок объявления';
     const desc = document.getElementById('embed-desc').value.trim() || 'Здесь будет отображаться ваш текст объявления...';
     const color = document.getElementById('embed-color').value;
-    const footer = document.getElementById('embed-footer').value.trim() || 'ShieldGuard Announcements';
+    const footer = document.getElementById('embed-footer').value.trim() || 'Kobi Announcements';
     const imgUrl = document.getElementById('embed-image').value.trim();
 
     document.getElementById('preview-title').textContent = title;

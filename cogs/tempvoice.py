@@ -34,7 +34,7 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
                     await remove_temp_channel(ch_id)
                 elif isinstance(channel, discord.VoiceChannel) and len(channel.members) == 0:
                     try:
-                        await channel.delete(reason="ShieldGuard: Очистка пустой временной комнаты при запуске")
+                        await channel.delete(reason="Kobi: Очистка пустой временной комнаты при запуске")
                     except Exception:
                         pass
                     await remove_temp_channel(ch_id)
@@ -60,7 +60,7 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
                 # Если в комнате больше никого не осталось — удаляем
                 if len(before.channel.members) == 0:
                     try:
-                        await before.channel.delete(reason="ShieldGuard: Все участники покинули временную комнату")
+                        await before.channel.delete(reason="Kobi: Все участники покинули временную комнату")
                     except Exception as e:
                         logger.warning(f"Не удалось удалить временный канал {before.channel.name}: {e}")
                     await remove_temp_channel(before.channel.id)
@@ -97,10 +97,10 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
                 name=channel_name,
                 category=category,
                 overwrites=overwrites,
-                reason=f"ShieldGuard: Создание временной комнаты для {member.name}"
+                reason=f"Kobi: Создание временной комнаты для {member.name}"
             )
             # Перемещаем пользователя в созданную комнату
-            await member.move_to(new_voice, reason="ShieldGuard: Перемещение в персональную комнату")
+            await member.move_to(new_voice, reason="Kobi: Перемещение в персональную комнату")
             # Записываем в базу данных
             await add_temp_channel(new_voice.id, guild.id, member.id)
 
@@ -140,7 +140,7 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
         master_ch = await guild.create_voice_channel(
             name="➕ Создать комнату",
             category=target_cat,
-            reason="ShieldGuard: Мастер-канал временных войсов"
+            reason="Kobi: Мастер-канал временных войсов"
         )
 
         await set_temp_voice_settings(

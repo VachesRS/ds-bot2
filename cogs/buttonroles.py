@@ -59,10 +59,10 @@ class RoleButton(discord.ui.Button):
         # Переключение роли: если есть — снимаем, если нет — выдаем
         try:
             if role in member.roles:
-                await member.remove_roles(role, reason="ShieldGuard: Снятие роли по кнопке")
+                await member.remove_roles(role, reason="Kobi: Снятие роли по кнопке")
                 await interaction.response.send_message(f"➖ Роль {role.mention} была успешно снята!", ephemeral=True)
             else:
-                await member.add_roles(role, reason="ShieldGuard: Выдача роли по кнопке")
+                await member.add_roles(role, reason="Kobi: Выдача роли по кнопке")
                 await interaction.response.send_message(f"➕ Вам успешно выдана роль {role.mention}!", ephemeral=True)
         except discord.Forbidden:
             await interaction.response.send_message("❌ Недостаточно прав для управления этой ролью.", ephemeral=True)

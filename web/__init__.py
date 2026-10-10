@@ -1,1 +1,1 @@
-"""ShieldGuard Web Dashboard package."""
+"""Kobi Web Dashboard package."""

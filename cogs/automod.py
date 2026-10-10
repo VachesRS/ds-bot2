@@ -551,7 +551,7 @@ class AutoMod(commands.Cog):
                 print(f"⚠️ [AutoRole] Роль {role.name} выше или равна роли бота на сервере {member.guild.name}")
                 return
 
-            await member.add_roles(role, reason="ShieldGuard: Автовыдача роли новому участнику (AutoRole)")
+            await member.add_roles(role, reason="Kobi: Автовыдача роли новому участнику (AutoRole)")
             print(f"✅ [AutoRole] Роль '{role.name}' успешно выдана новому участнику {member.name} ({member.id})")
 
             # Отправка структурированного лога в канал аудита

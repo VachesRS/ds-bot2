@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ShieldGuard — Панель управления{% endblock %}</title>
+    <title>{% block title %}Kobi — Панель управления{% endblock %}</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -85,16 +85,16 @@
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                     <div class="w-full h-full bg-discord-darkest rounded-[10px] flex items-center justify-center overflow-hidden">
                         {% if bot_avatar %}
-                        <img src="{{ bot_avatar }}" alt="ShieldGuard" class="w-full h-full object-cover">
+                        <img src="{{ bot_avatar }}" alt="Kobi" class="w-full h-full object-cover">
                         {% else %}
-                        <i class="fa-solid fa-shield-halved text-brand-400 text-lg"></i>
+                        <i class="fa-solid fa-paw text-brand-400 text-lg"></i>
                         {% endif %}
                     </div>
                 </div>
                 <div>
                     <div class="font-bold text-lg text-white flex items-center gap-2">
-                        ShieldGuard
-                        <span class="text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-medium">AI BOT</span>
+                        🐾 Kobi
+                        <span class="text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-medium">BOT</span>
                     </div>
                     <div class="text-xs text-gray-400 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -135,11 +135,11 @@
     <footer class="border-t border-white/5 bg-discord-darkest/50 py-6 mt-12 text-center text-xs text-gray-500">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-                <i class="fa-solid fa-shield-halved text-brand-400"></i>
-                <span>ShieldGuard AutoMod AI — Защита серверов Discord</span>
+                <i class="fa-solid fa-paw text-brand-400"></i>
+                <span>🐾 Kobi Bot — Умный помощник и модератор для Discord</span>
             </div>
             <div>
-                <span>Хостинг: Render • Локальные ИИ: RuBERT-Tiny & ResNet-50</span>
+                <span>Хостинг: Render • ИИ: RuBERT & OpenNSFW • База: SQLite</span>
             </div>
         </div>
     </footer>

@@ -15,8 +15,9 @@ from database import (
 
 logger = logging.getLogger("CloudSync")
 
-DATA_CHANNEL_NAMES = ("🔒-shieldguard-data", "shieldguard-data", "shieldguard-backup")
-SETTINGS_HEADER = "⚙️ **[SHIELDGUARD_SETTINGS_STORAGE]**"
+DATA_CHANNEL_NAMES = ("🔒-kobi-data", "kobi-data", "kobi-backup", "🔒-shieldguard-data", "shieldguard-data", "shieldguard-backup")
+SETTINGS_HEADER = "🐾 **[KOBI_SETTINGS_STORAGE]**"
+LEGACY_HEADER = "**[SHIELDGUARD_SETTINGS_STORAGE]**"
 
 
 async def get_or_create_data_channel(guild: discord.Guild) -> discord.TextChannel | None:
@@ -50,10 +51,10 @@ async def get_or_create_data_channel(guild: discord.Guild) -> discord.TextChanne
             )
         }
         channel = await guild.create_text_channel(
-            name="🔒-shieldguard-data",
+            name="🔒-kobi-data",
             overwrites=overwrites,
-            topic="Служебное хранилище конфигурации ShieldGuard. Не удаляйте этот канал: здесь бот автоматически сохраняет все настройки сервера при обновлениях и перезапусках на хостинге.",
-            reason="ShieldGuard: Автоматическое создание облачного хранилища настроек"
+            topic="Служебное хранилище конфигурации Kobi. Не удаляйте этот канал: здесь бот автоматически сохраняет все настройки сервера при обновлениях и перезапусках на хостинге.",
+            reason="Kobi: Автоматическое создание облачного хранилища настроек"
         )
         logger.info(f"Создан служебный канал данных '{channel.name}' на сервере {guild.name}")
         return channel
@@ -98,7 +99,7 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
         message_content = f"{SETTINGS_HEADER}\n```json\n{json_payload}\n```"
 
         embed = discord.Embed(
-            title="🛡️ ShieldGuard — Облачное хранилище настроек",
+            title="🐾 Kobi — Облачное хранилище настроек",
             description=(
                 "Этот канал и закреплённое сообщение используются ботом для сохранения параметров конфигурации "
                 "между деплоями, обновлениями кода и перезапусками на Render.\n\n"
@@ -118,7 +119,7 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
 
         target_message = None
         async for msg in channel.history(limit=25):
-            if msg.author.id == bot.user.id and SETTINGS_HEADER in msg.content:
+            if msg.author.id == bot.user.id and (SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content):
                 target_message = msg
                 break
 
@@ -127,7 +128,7 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
         else:
             new_msg = await channel.send(content=message_content, embed=embed)
             try:
-                await new_msg.pin(reason="ShieldGuard: Закрепление файла настроек")
+                await new_msg.pin(reason="Kobi: Закрепление файла настроек")
             except Exception:
                 pass
 
@@ -154,7 +155,7 @@ async def restore_guild_settings_from_discord(bot: commands.Bot, guild: discord.
 
         found_data = None
         async for msg in channel.history(limit=30):
-            if SETTINGS_HEADER in msg.content:
+            if SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content:
                 content = msg.content
                 if "```json" in content and "```" in content.split("```json", 1)[1]:
                     json_str = content.split("```json", 1)[1].split("```", 1)[0].strip()
