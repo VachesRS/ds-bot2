@@ -1,3 +1,4 @@
+import os
 import io
 import time
 import random
@@ -28,23 +29,29 @@ logger = logging.getLogger("Levels")
 _xp_cooldowns: dict[tuple[int, int], float] = {}
 
 
+FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "fonts")
+ROBOTO_BOLD = os.path.join(FONTS_DIR, "Roboto-Bold.ttf")
+ROBOTO_REGULAR = os.path.join(FONTS_DIR, "Roboto-Regular.ttf")
+
+
 def get_font(size: int, bold: bool = False):
-    """Безопасная загрузка системных шрифтов с поддержкой Windows и Linux/Render."""
-    font_candidates = [
+    """Безопасная загрузка шрифта Roboto с полной поддержкой Unicode и Кириллицы."""
+    font_path = ROBOTO_BOLD if bold else ROBOTO_REGULAR
+    if os.path.exists(font_path):
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:
+            pass
+    for font_name in [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "arialbd.ttf" if bold else "arial.ttf",
         "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
-        "segui_bold.ttf" if bold else "segoeui.ttf",
-        "Roboto-Bold.ttf" if bold else "Roboto-Regular.ttf",
-    ]
-    for font_name in font_candidates:
+    ]:
         try:
             return ImageFont.truetype(font_name, size)
         except Exception:
             continue
-    try:
-        return ImageFont.load_default()
-    except Exception:
-        return None
+    return ImageFont.load_default()
 
 
 async def render_rank_card(
@@ -54,24 +61,19 @@ async def render_rank_card(
     cur_xp: int,
     needed_xp: int
 ) -> io.BytesIO:
-    """Генерирует стильную неоновую карточку ранга в стиле киберпанк / Discord Dark."""
-    width, height = 900, 260
-    # Создаем базовое изображение с альфа-каналом
+    """Генерирует стильную карточку ранга с поддержкой кириллицы и четкой графикой."""
+    width, height = 920, 260
     image = Image.new("RGBA", (width, height), (15, 17, 24, 255))
     draw = ImageDraw.Draw(image)
 
-    # 1. Фоновый градиент и карточка с закругленными углами
-    card_bg = (24, 28, 41, 240)
-    card_border = (59, 130, 246, 120)  # сияющий синий оттенок
-    draw.rounded_rectangle([15, 15, width - 15, height - 15], radius=24, fill=card_bg, outline=card_border, width=2)
-
-    # Декоративная неоновая подсветка в углу
-    accent_color = (99, 102, 241)  # Indigo
-    draw.ellipse([width - 250, -80, width + 50, 150], fill=(99, 102, 241, 30))
+    # 1. Основная карточка с рамкой цвета индиго
+    card_bg = (24, 28, 42, 255)
+    card_border = (79, 70, 229, 255)
+    draw.rounded_rectangle([10, 10, width - 10, height - 10], radius=24, fill=card_bg, outline=card_border, width=2)
 
     # 2. Загрузка и отрисовка аватарки пользователя
-    avatar_size = 170
-    avatar_pos = (50, 45)
+    avatar_size = 150
+    avatar_pos = (50, 55)
     avatar_image = None
 
     try:
@@ -85,7 +87,6 @@ async def render_rank_card(
         logger.warning(f"Не удалось загрузить аватарку {member.name}: {e}")
 
     if not avatar_image:
-        # Заглушка, если аватарка не загрузилась
         avatar_image = Image.new("RGBA", (avatar_size, avatar_size), (88, 101, 242, 255))
 
     avatar_image = avatar_image.resize((avatar_size, avatar_size), Image.Resampling.LANCZOS)
@@ -95,14 +96,14 @@ async def render_rank_card(
     mask_draw = ImageDraw.Draw(mask)
     mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
 
-    # Ореол вокруг аватарки
+    # Светящийся ореол вокруг аватарки
     draw.ellipse(
         (avatar_pos[0] - 4, avatar_pos[1] - 4, avatar_pos[0] + avatar_size + 4, avatar_pos[1] + avatar_size + 4),
-        fill=(59, 130, 246, 255)
+        fill=(99, 102, 241, 255)
     )
     image.paste(avatar_image, avatar_pos, mask)
 
-    # Индикатор статуса (онлайн / офлайн)
+    # Индикатор статуса (онлайн / не беспокоить / неактивен)
     status_colors = {
         discord.Status.online: (34, 197, 94),
         discord.Status.idle: (234, 179, 8),
@@ -110,54 +111,52 @@ async def render_rank_card(
         discord.Status.offline: (148, 163, 184)
     }
     status_col = status_colors.get(member.status, (148, 163, 184))
-    draw.ellipse((avatar_pos[0] + avatar_size - 36, avatar_pos[1] + avatar_size - 36, avatar_pos[0] + avatar_size, avatar_pos[1] + avatar_size), fill=(24, 28, 41, 255))
-    draw.ellipse((avatar_pos[0] + avatar_size - 32, avatar_pos[1] + avatar_size - 32, avatar_pos[0] + avatar_size - 4, avatar_pos[1] + avatar_size - 4), fill=status_col)
+    draw.ellipse((avatar_pos[0] + avatar_size - 34, avatar_pos[1] + avatar_size - 34, avatar_pos[0] + avatar_size + 2, avatar_pos[1] + avatar_size + 2), fill=card_bg)
+    draw.ellipse((avatar_pos[0] + avatar_size - 30, avatar_pos[1] + avatar_size - 30, avatar_pos[0] + avatar_size - 2, avatar_pos[1] + avatar_size - 2), fill=status_col)
 
-    # 3. Текстовая информация
+    # 3. Шрифты и текстовая информация
     font_large = get_font(34, bold=True)
-    font_medium = get_font(24, bold=True)
+    font_label = get_font(14, bold=True)
     font_small = get_font(18, bold=False)
 
-    text_x = 250
-    # Имя пользователя
+    text_x = 230
     username = member.display_name
     if len(username) > 18:
         username = username[:16] + "..."
-    draw.text((text_x, 50), username, font=font_large, fill=(255, 255, 255))
+    draw.text((text_x, 60), username, font=font_large, fill=(255, 255, 255, 255))
 
-    # Бейджи Ранга и Уровня в правом верхнем углу
-    rank_text = f"РАНГ #{rank}"
-    lvl_text = f"УРОВЕНЬ {level}"
+    # Бейджи Уровня и Ранга в правом верхнем углу
+    right_x = width - 50
 
-    # Отрисовка бейджей справа
-    right_x = width - 60
-    draw.text((right_x, 52), lvl_text, font=font_large, fill=(59, 130, 246), anchor="ra")
-    draw.text((right_x - 220, 56), rank_text, font=font_medium, fill=(148, 163, 184), anchor="ra")
+    lvl_num = str(level)
+    draw.text((right_x, 50), lvl_num, font=font_large, fill=(99, 102, 241, 255), anchor="ra")
+    draw.text((right_x - 30, 68), "УРОВЕНЬ", font=font_label, fill=(148, 163, 184, 255), anchor="ra")
 
-    # Текст текущего опыта
-    xp_text = f"{cur_xp:,} / {needed_xp:,} XP".replace(",", " ")
-    draw.text((right_x, 140), xp_text, font=font_small, fill=(203, 213, 225), anchor="ra")
+    rank_num = f"#{rank}"
+    draw.text((right_x - 170, 52), rank_num, font=font_large, fill=(255, 255, 255, 255), anchor="ra")
+    draw.text((right_x - 215, 68), "РАНГ", font=font_label, fill=(148, 163, 184, 255), anchor="ra")
 
     # 4. Прогресс-бар опыта
+    ratio = min(max(cur_xp / max(needed_xp, 1), 0.0), 1.0)
+    pct = int(ratio * 100)
+
+    # Текст текущего опыта
+    xp_text = f"{cur_xp:,} / {needed_xp:,} XP ({pct}%)".replace(",", " ")
+    draw.text((right_x, 140), xp_text, font=font_small, fill=(203, 213, 225, 255), anchor="ra")
+
     bar_x = text_x
     bar_y = 175
-    bar_w = width - bar_x - 60
+    bar_w = width - bar_x - 50
     bar_h = 24
 
     # Фон шкалы
-    draw.rounded_rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], radius=12, fill=(40, 46, 66))
+    draw.rounded_rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], radius=12, fill=(40, 46, 66, 255))
 
     # Заполнение шкалы прогресса
-    ratio = min(max(cur_xp / max(needed_xp, 1), 0.0), 1.0)
     fill_w = max(int(bar_w * ratio), 12 if ratio > 0 else 0)
-
     if fill_w > 0:
-        # Красивое неоновое заполнение
-        draw.rounded_rectangle([bar_x, bar_y, bar_x + fill_w, bar_y + bar_h], radius=12, fill=(99, 102, 241))
-        # Блик на шкале
-        draw.rounded_rectangle([bar_x, bar_y, bar_x + fill_w, bar_y + 8], radius=4, fill=(129, 140, 248, 120))
+        draw.rounded_rectangle([bar_x, bar_y, bar_x + fill_w, bar_y + bar_h], radius=12, fill=(99, 102, 241, 255))
 
-    # Сохраняем в буфер памяти
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)

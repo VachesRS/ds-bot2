@@ -1,3 +1,4 @@
+import os
 import io
 import logging
 from typing import Optional
@@ -12,24 +13,29 @@ from database import get_welcome_settings, set_welcome_settings
 
 logger = logging.getLogger("Welcome")
 
+FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "fonts")
+ROBOTO_BOLD = os.path.join(FONTS_DIR, "Roboto-Bold.ttf")
+ROBOTO_REGULAR = os.path.join(FONTS_DIR, "Roboto-Regular.ttf")
+
 
 def get_font(size: int, bold: bool = False):
-    """Безопасная загрузка системных шрифтов."""
-    font_candidates = [
+    """Безопасная загрузка шрифта Roboto с поддержкой Unicode/Кириллицы."""
+    font_path = ROBOTO_BOLD if bold else ROBOTO_REGULAR
+    if os.path.exists(font_path):
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:
+            pass
+    for font_name in [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "arialbd.ttf" if bold else "arial.ttf",
         "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
-        "segui_bold.ttf" if bold else "segoeui.ttf",
-        "Roboto-Bold.ttf" if bold else "Roboto-Regular.ttf",
-    ]
-    for font_name in font_candidates:
+    ]:
         try:
             return ImageFont.truetype(font_name, size)
         except Exception:
             continue
-    try:
-        return ImageFont.load_default()
-    except Exception:
-        return None
+    return ImageFont.load_default()
 
 
 async def render_welcome_card(member: discord.Member) -> io.BytesIO:
@@ -38,10 +44,10 @@ async def render_welcome_card(member: discord.Member) -> io.BytesIO:
     image = Image.new("RGBA", (width, height), (15, 17, 24, 255))
     draw = ImageDraw.Draw(image)
 
-    # Фон и неоновые элементы
-    draw.rounded_rectangle([15, 15, width - 15, height - 15], radius=24, fill=(24, 28, 41, 245), outline=(99, 102, 241, 140), width=2)
-    draw.ellipse([-50, -50, 200, 200], fill=(59, 130, 246, 35))
-    draw.ellipse([width - 180, height - 180, width + 60, height + 60], fill=(168, 85, 247, 35))
+    # Фон и аккуратная рамка
+    card_bg = (24, 28, 42, 255)
+    card_border = (79, 70, 229, 255)
+    draw.rounded_rectangle([12, 12, width - 12, height - 12], radius=24, fill=card_bg, outline=card_border, width=2)
 
     # Загрузка аватара
     avatar_size = 180
