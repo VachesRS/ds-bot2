@@ -5,7 +5,13 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 
-from database import get_guild_settings, DB_PATH
+from database import (
+    get_guild_settings, DB_PATH,
+    get_welcome_settings, set_welcome_settings,
+    get_guild_level_settings, set_guild_level_settings,
+    get_temp_voice_settings, set_temp_voice_settings,
+    get_level_rewards, set_level_reward
+)
 
 logger = logging.getLogger("CloudSync")
 
@@ -64,6 +70,11 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
             return False
 
         settings = await get_guild_settings(guild.id)
+        welcome_cfg = await get_welcome_settings(guild.id)
+        level_cfg = await get_guild_level_settings(guild.id)
+        rewards_list = await get_level_rewards(guild.id)
+        temp_voice_cfg = await get_temp_voice_settings(guild.id)
+
         data = {
             "guild_id": guild.id,
             "log_channel_id": settings.get("log_channel_id", 0),
@@ -76,6 +87,10 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
             "ignore_admins": settings.get("ignore_admins", 1),
             "anti_nsfw": settings.get("anti_nsfw", 1),
             "anti_toxicity": settings.get("anti_toxicity", 1),
+            "welcome": welcome_cfg,
+            "levels": level_cfg,
+            "level_rewards": rewards_list,
+            "temp_voice": temp_voice_cfg,
             "updated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
         }
 
@@ -186,6 +201,41 @@ async def restore_guild_settings_from_discord(bot: commands.Bot, guild: discord.
                 )
             )
             await db.commit()
+
+        # Восстановление конфигурации новых модулей
+        if "welcome" in found_data and isinstance(found_data["welcome"], dict):
+            w = found_data["welcome"]
+            await set_welcome_settings(
+                guild_id=guild.id,
+                enabled=bool(w.get("enabled", 0)),
+                channel_id=int(w.get("channel_id", 0)),
+                message=str(w.get("message", "Добро пожаловать, {mention}! 🎉")),
+                dm_message=str(w.get("dm_message", "")),
+                send_card=bool(w.get("send_card", 1))
+            )
+
+        if "levels" in found_data and isinstance(found_data["levels"], dict):
+            lvl = found_data["levels"]
+            await set_guild_level_settings(
+                guild_id=guild.id,
+                enabled=bool(lvl.get("enabled", 1)),
+                announce_channel_id=int(lvl.get("announce_channel_id", 0)),
+                xp_rate=float(lvl.get("xp_rate", 1.0))
+            )
+
+        if "level_rewards" in found_data and isinstance(found_data["level_rewards"], list):
+            for rew in found_data["level_rewards"]:
+                if "level" in rew and "role_id" in rew:
+                    await set_level_reward(guild.id, int(rew["level"]), int(rew["role_id"]))
+
+        if "temp_voice" in found_data and isinstance(found_data["temp_voice"], dict):
+            tv = found_data["temp_voice"]
+            await set_temp_voice_settings(
+                guild_id=guild.id,
+                enabled=bool(tv.get("enabled", 0)),
+                category_id=int(tv.get("category_id", 0)),
+                master_channel_id=int(tv.get("master_channel_id", 0))
+            )
 
         logger.info(f"✅ Настройки сервера '{guild.name}' успешно восстановлены из облака Discord!")
         return True

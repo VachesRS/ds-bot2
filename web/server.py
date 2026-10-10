@@ -13,7 +13,13 @@ import jinja2
 import discord
 from discord.ext import commands
 
-from database import get_guild_settings, set_log_channel, set_autorole, set_feature_toggle
+from database import (
+    get_guild_settings, set_log_channel, set_autorole, set_feature_toggle,
+    get_welcome_settings, set_welcome_settings,
+    get_guild_level_settings, set_guild_level_settings,
+    get_level_rewards, set_level_reward, remove_level_reward,
+    get_leaderboard, get_temp_voice_settings, set_temp_voice_settings
+)
 from cloud_sync import sync_guild_settings_to_discord
 
 logger = logging.getLogger("Dashboard")
@@ -106,6 +112,8 @@ class DashboardServer:
         self.app.router.add_get("/dashboard/{guild_id}", self.handle_guild_dashboard)
         self.app.router.add_post("/api/guild/{guild_id}/settings", self.handle_api_save_settings)
         self.app.router.add_post("/api/guild/{guild_id}/sync", self.handle_api_sync)
+        self.app.router.add_post("/api/guild/{guild_id}/embed", self.handle_api_send_embed)
+        self.app.router.add_post("/api/guild/{guild_id}/level_rewards", self.handle_api_level_rewards)
 
     def _common_context(self, request: web.Request, user: Optional[dict] = None) -> dict:
         """Общие переменные для всех шаблонов."""
@@ -316,6 +324,25 @@ class DashboardServer:
             return web.HTTPFound("/?error=guild_not_found_or_forbidden")
 
         settings = await get_guild_settings(bot_guild.id)
+        welcome_cfg = await get_welcome_settings(bot_guild.id)
+        level_cfg = await get_guild_level_settings(bot_guild.id)
+        level_rewards_list = await get_level_rewards(bot_guild.id)
+        temp_voice_cfg = await get_temp_voice_settings(bot_guild.id)
+        leaderboard_raw = await get_leaderboard(bot_guild.id, limit=10)
+
+        leaderboard = []
+        for entry in leaderboard_raw:
+            mem = bot_guild.get_member(entry["user_id"])
+            leaderboard.append({
+                "rank": entry["rank"],
+                "name": mem.display_name if mem else f"ID: {entry['user_id']}",
+                "avatar": mem.display_avatar.url if mem else None,
+                "level": entry["level"],
+                "cur_xp": entry["cur_xp"],
+                "needed_xp": entry["needed_xp"],
+                "xp": entry["xp"]
+            })
+
         ctx = self._common_context(request, user=session_data)
 
         # Данные гильдии для шаблона
@@ -336,15 +363,36 @@ class DashboardServer:
                 "name": ch.name
             })
 
+        categories = []
+        for cat in bot_guild.categories:
+            categories.append({
+                "id": cat.id,
+                "name": cat.name
+            })
+
+        voice_channels = []
+        for vc in bot_guild.voice_channels:
+            voice_channels.append({
+                "id": vc.id,
+                "name": vc.name
+            })
+
         ctx["guild"] = {
             "id": str(bot_guild.id),
             "name": bot_guild.name,
             "icon_url": icon_url,
             "member_count": bot_guild.member_count or len(bot_guild.members),
             "roles": roles,
-            "text_channels": text_channels
+            "text_channels": text_channels,
+            "categories": categories,
+            "voice_channels": voice_channels
         }
         ctx["settings"] = settings
+        ctx["welcome"] = welcome_cfg
+        ctx["levels"] = level_cfg
+        ctx["level_rewards"] = level_rewards_list
+        ctx["temp_voice"] = temp_voice_cfg
+        ctx["leaderboard"] = leaderboard
 
         template = jinja_env.get_template("guild.html")
         html = template.render(**ctx)
@@ -385,7 +433,30 @@ class DashboardServer:
                     val = bool(int(data[tog]))
                     await set_feature_toggle(guild_id, tog, val)
 
-            # 4. Фоновая синхронизация с облачным каналом Discord
+            # 4. Приветствия (Welcome)
+            if "welcome_enabled" in data:
+                w_enabled = bool(int(data.get("welcome_enabled", 0)))
+                w_channel = int(data.get("welcome_channel_id", 0))
+                w_msg = str(data.get("welcome_message", "Добро пожаловать на наш сервер, {mention}! 🎉"))
+                w_dm = str(data.get("welcome_dm_message", ""))
+                w_card = bool(int(data.get("welcome_send_card", 1)))
+                await set_welcome_settings(guild_id, w_enabled, w_channel, w_msg, w_dm, w_card)
+
+            # 5. Уровни (Levels)
+            if "levels_enabled" in data:
+                l_enabled = bool(int(data.get("levels_enabled", 1)))
+                l_channel = int(data.get("levels_announce_channel_id", 0))
+                l_rate = float(data.get("levels_xp_rate", 1.0))
+                await set_guild_level_settings(guild_id, l_enabled, l_channel, l_rate)
+
+            # 6. Временные войсы (Temp Voice)
+            if "temp_voice_enabled" in data:
+                tv_enabled = bool(int(data.get("temp_voice_enabled", 0)))
+                tv_cat = int(data.get("temp_voice_category_id", 0))
+                tv_master = int(data.get("temp_voice_master_id", 0))
+                await set_temp_voice_settings(guild_id, tv_enabled, tv_cat, tv_master)
+
+            # 7. Фоновая синхронизация с облачным каналом Discord
             import asyncio
             asyncio.create_task(sync_guild_settings_to_discord(self.bot, bot_guild))
 
@@ -394,6 +465,75 @@ class DashboardServer:
 
         except Exception as e:
             logger.error(f"Ошибка сохранения настроек через веб-интерфейс: {e}")
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
+    async def handle_api_send_embed(self, request: web.Request) -> web.Response:
+        """AJAX API: отправка созданного Embed в канал Discord из визуального конструктора."""
+        guild_id_str = request.match_info.get("guild_id", "")
+        session_data, bot_guild = await self._check_guild_access(request, guild_id_str)
+
+        if not session_data or not bot_guild:
+            return web.json_response({"success": False, "error": "Доступ запрещен"}, status=403)
+
+        try:
+            data = await request.json()
+            channel_id = int(data.get("channel_id", 0))
+            channel = bot_guild.get_channel(channel_id)
+            if not channel or not isinstance(channel, discord.TextChannel):
+                return web.json_response({"success": False, "error": "Выберите текстовый канал для отправки."}, status=400)
+
+            title = str(data.get("title", "")).strip()
+            description = str(data.get("description", "")).strip()
+            color_hex = str(data.get("color", "#5865F2")).lstrip("#")
+            image_url = str(data.get("image_url", "")).strip()
+            footer = str(data.get("footer", "")).strip()
+
+            if not title and not description:
+                return web.json_response({"success": False, "error": "Заполните заголовок или текст описания."}, status=400)
+
+            try:
+                color_int = int(color_hex, 16)
+            except Exception:
+                color_int = 0x5865F2
+
+            embed = discord.Embed(
+                title=title or None,
+                description=description or None,
+                color=discord.Color(color_int)
+            )
+            if image_url:
+                embed.set_image(url=image_url)
+            if footer:
+                embed.set_footer(text=footer)
+
+            await channel.send(embed=embed)
+            return web.json_response({"success": True})
+        except Exception as e:
+            logger.error(f"Ошибка при отправке Embed из веб-панели: {e}")
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
+    async def handle_api_level_rewards(self, request: web.Request) -> web.Response:
+        """AJAX API: добавление/удаление наградных ролей за уровни."""
+        guild_id_str = request.match_info.get("guild_id", "")
+        session_data, bot_guild = await self._check_guild_access(request, guild_id_str)
+
+        if not session_data or not bot_guild:
+            return web.json_response({"success": False, "error": "Доступ запрещен"}, status=403)
+
+        try:
+            data = await request.json()
+            action = data.get("action", "add")
+            level = int(data.get("level", 1))
+
+            if action == "add":
+                role_id = int(data.get("role_id", 0))
+                await set_level_reward(bot_guild.id, level, role_id)
+            elif action == "remove":
+                await remove_level_reward(bot_guild.id, level)
+
+            rewards = await get_level_rewards(bot_guild.id)
+            return web.json_response({"success": True, "rewards": rewards})
+        except Exception as e:
             return web.json_response({"success": False, "error": str(e)}, status=500)
 
     async def handle_api_sync(self, request: web.Request) -> web.Response:

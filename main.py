@@ -58,7 +58,15 @@ class AutoModBot(commands.Bot):
             logger.error(f"Не удалось запустить веб-интерфейс Dashboard: {e}")
 
         # 3. Загрузка когов (модулей)
-        cogs = ["cogs.automod", "cogs.moderation"]
+        cogs = [
+            "cogs.automod",
+            "cogs.moderation",
+            "cogs.levels",
+            "cogs.buttonroles",
+            "cogs.welcome",
+            "cogs.tempvoice",
+            "cogs.giveaways"
+        ]
         for cog in cogs:
             try:
                 await self.load_extension(cog)
