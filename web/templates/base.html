@@ -128,6 +128,14 @@
 
     <!-- Основное содержимое -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% if query_error %}
+        <div class="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm mb-6 flex items-center gap-3 shadow-lg shadow-red-500/5">
+            <i class="fa-solid fa-triangle-exclamation text-red-400 text-lg"></i>
+            <div>
+                <span class="font-semibold text-white">Внимание:</span> <span>{{ query_error }}</span>
+            </div>
+        </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 

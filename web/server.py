@@ -64,7 +64,14 @@ def get_redirect_uri(request: web.Request) -> str:
 
     proto = request.headers.get("X-Forwarded-Proto", request.scheme)
     host = request.headers.get("X-Forwarded-Host", request.host)
+    if host.endswith(":80"):
+        host = host[:-3]
+    elif host.endswith(":443"):
+        host = host[:-4]
     return f"{proto}://{host}/callback"
+
+
+SERVER_SESSIONS = {}
 
 
 def sign_session(data: dict) -> str:
@@ -76,8 +83,21 @@ def sign_session(data: dict) -> str:
 
 
 def verify_session(cookie_str: Optional[str]) -> Optional[dict]:
-    """Проверяет подлинность сессионной куки."""
-    if not cookie_str or "." not in cookie_str:
+    """Проверяет сессию через оперативную память сервера или резервную подпись."""
+    if not cookie_str:
+        return None
+
+    # 1. Быстрый поиск в оперативной памяти сервера (без ограничения размера браузера)
+    if cookie_str in SERVER_SESSIONS:
+        sess = SERVER_SESSIONS[cookie_str]
+        if time.time() <= sess.get("exp", 0):
+            return sess
+        else:
+            del SERVER_SESSIONS[cookie_str]
+            return None
+
+    # 2. Резервный поиск через подписанный токен
+    if "." not in cookie_str:
         return None
     try:
         b64, sig = cookie_str.split(".", 1)
@@ -133,7 +153,8 @@ class DashboardServer:
             "user": user,
             "client_id": get_client_id(self.bot),
             "oauth_configured": bool(client_secret and client_secret.strip()),
-            "redirect_uri": get_redirect_uri(request)
+            "redirect_uri": get_redirect_uri(request),
+            "query_error": request.query.get("error")
         }
 
     async def handle_health(self, request: web.Request) -> web.Response:
@@ -230,15 +251,31 @@ class DashboardServer:
                     return web.HTTPFound("/?error=user_fetch_failed")
                 user_info = await resp.json()
 
-            # 3. Получение списка серверов пользователя
+            # 3. Получение списка серверов пользователя и фильтрация только серверов с админ-правами
+            # Это кардинально уменьшает размер сессии с 25 КБ до 500 байт и предотвращает сброс куки браузером
             async with self.session.get("https://discord.com/api/v10/users/@me/guilds", headers=headers) as resp:
                 if resp.status != 200:
-                    guilds_info = []
+                    guilds_raw = []
                 else:
-                    guilds_info = await resp.json()
+                    guilds_raw = await resp.json()
+
+            admin_guilds_compact = []
+            if isinstance(guilds_raw, list):
+                for g in guilds_raw:
+                    perms = int(g.get("permissions", 0))
+                    is_owner = g.get("owner", False)
+                    has_admin = is_owner or ((perms & 0x8) != 0) or ((perms & 0x20) != 0)
+                    if has_admin:
+                        admin_guilds_compact.append({
+                            "id": str(g.get("id")),
+                            "name": g.get("name", "Сервер"),
+                            "icon": g.get("icon"),
+                            "owner": is_owner,
+                            "permissions": perms
+                        })
 
             # Аватарка пользователя
-            user_id = user_info.get("id")
+            user_id = str(user_info.get("id"))
             avatar_hash = user_info.get("avatar")
             if avatar_hash:
                 avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar_hash}.png"
@@ -250,27 +287,35 @@ class DashboardServer:
                 "id": user_id,
                 "username": user_info.get("global_name") or user_info.get("username"),
                 "avatar_url": avatar_url,
-                "guilds": guilds_info,
+                "guilds": admin_guilds_compact,
                 "exp": time.time() + (7 * 86400)
             }
 
-            cookie_val = sign_session(session_data)
+            import secrets
+            session_key = secrets.token_urlsafe(32)
+            SERVER_SESSIONS[session_key] = session_data
+
+            # Кука содержит только session_key (всего 43 байта!) — гарантированно сохраняется любым браузером
             response = web.HTTPFound("/")
             response.set_cookie(
                 COOKIE_NAME,
-                cookie_val,
+                session_key,
                 max_age=7 * 86400,
                 httponly=True,
                 samesite="Lax"
             )
+            logger.info(f"Успешный вход пользователя {session_data['username']} (ID: {user_id}). Найдено админ-серверов: {len(admin_guilds_compact)}")
             return response
 
         except Exception as e:
             logger.error(f"Ошибка OAuth2 callback: {e}")
-            return web.HTTPFound("/?error=oauth_internal_error")
+            return web.HTTPFound(f"/?error=oauth_internal_error")
 
     async def handle_logout(self, request: web.Request) -> web.Response:
         """Выход из учетной записи."""
+        cookie_val = request.cookies.get(COOKIE_NAME)
+        if cookie_val and cookie_val in SERVER_SESSIONS:
+            del SERVER_SESSIONS[cookie_val]
         response = web.HTTPFound("/")
         response.del_cookie(COOKIE_NAME)
         return response
