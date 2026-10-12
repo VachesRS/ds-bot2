@@ -34,6 +34,7 @@ class AutoModBot(commands.Bot):
         intents.message_content = True
         intents.members = True
         intents.guilds = True
+        intents.voice_states = True
 
         super().__init__(
             command_prefix="!",  # Префикс для классических команд (основное управление через слэш-команды /)

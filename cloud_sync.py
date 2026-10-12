@@ -231,12 +231,22 @@ async def restore_guild_settings_from_discord(bot: commands.Bot, guild: discord.
 
         if "temp_voice" in found_data and isinstance(found_data["temp_voice"], dict):
             tv = found_data["temp_voice"]
-            await set_temp_voice_settings(
-                guild_id=guild.id,
-                enabled=bool(tv.get("enabled", 0)),
-                category_id=int(tv.get("category_id", 0)),
-                master_channel_id=int(tv.get("master_channel_id", 0))
-            )
+            cloud_master = int(tv.get("master_channel_id", 0))
+            cloud_enabled = bool(tv.get("enabled", 0))
+            cloud_cat = int(tv.get("category_id", 0))
+
+            current_local = await get_temp_voice_settings(guild.id)
+            local_master = int(current_local.get("master_channel_id", 0))
+            local_enabled = bool(current_local.get("enabled", 0))
+
+            # Восстанавливаем из облака, только если в облаке есть данные или локально система не настроена
+            if cloud_master > 0 or not local_enabled:
+                await set_temp_voice_settings(
+                    guild_id=guild.id,
+                    enabled=cloud_enabled,
+                    category_id=cloud_cat,
+                    master_channel_id=cloud_master
+                )
 
         logger.info(f"✅ Настройки сервера '{guild.name}' успешно восстановлены из облака Discord!")
         return True
