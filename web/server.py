@@ -31,8 +31,12 @@ jinja_env = jinja2.Environment(
     autoescape=jinja2.select_autoescape(["html", "xml"])
 )
 
+import secrets
 # Секретный ключ для подписи сессионных кук (HMAC-SHA256)
-COOKIE_SECRET = os.getenv("DASHBOARD_SECRET_KEY", "kobi-secure-secret-key-2026").encode()
+_env_secret = os.getenv("DASHBOARD_SECRET_KEY")
+if not _env_secret or _env_secret == "kobi-secure-secret-key-2026":
+    _env_secret = secrets.token_hex(32)
+COOKIE_SECRET = _env_secret.encode()
 COOKIE_NAME = "kobi_session"
 
 
@@ -232,17 +236,26 @@ class DashboardServer:
         client_id = get_client_id(self.bot)
         redirect_uri = get_redirect_uri(request)
         scope = "identify guilds"
+        state = secrets.token_urlsafe(24)
 
         oauth_url = (
             f"https://discord.com/oauth2/authorize?client_id={client_id}"
             f"&redirect_uri={redirect_uri}"
             f"&response_type=code&scope={scope.replace(' ', '%20')}"
+            f"&state={state}"
             f"&prompt=none"
         )
-        return web.HTTPFound(oauth_url)
+        resp = web.HTTPFound(oauth_url)
+        resp.set_cookie("kobi_oauth_state", state, max_age=600, httponly=True, samesite="Lax")
+        return resp
 
     async def handle_callback(self, request: web.Request) -> web.Response:
         """Обработка ответа от Discord OAuth2."""
+        state = request.query.get("state")
+        cookie_state = request.cookies.get("kobi_oauth_state")
+        if not state or not cookie_state or state != cookie_state:
+            return web.HTTPFound("/?error=invalid_csrf_state")
+
         code = request.query.get("code")
         if not code:
             error = request.query.get("error_description", "Авторизация отменена")
@@ -328,13 +341,16 @@ class DashboardServer:
 
             # Кука содержит только session_key (всего 43 байта!) — гарантированно сохраняется любым браузером
             response = web.HTTPFound("/")
+            is_https = request.scheme == "https" or request.headers.get("X-Forwarded-Proto") == "https"
             response.set_cookie(
                 COOKIE_NAME,
                 session_key,
                 max_age=7 * 86400,
                 httponly=True,
-                samesite="Lax"
+                samesite="Lax",
+                secure=is_https
             )
+            response.del_cookie("kobi_oauth_state")
             logger.info(f"Успешный вход пользователя {session_data['username']} (ID: {user_id}). Найдено админ-серверов: {len(admin_guilds_compact)}")
             return response
 
@@ -367,24 +383,23 @@ class DashboardServer:
 
         user_id = int(session_data.get("id", 0))
 
-        # 1. Проверяем кэшированный список серверов из OAuth2
+        # Проверяем реальное текущее членство и актуальные права пользователя на сервере
+        member = bot_guild.get_member(user_id)
+        if not member:
+            try:
+                member = await bot_guild.fetch_member(user_id)
+            except Exception:
+                member = None
+
         has_permission = False
-        for g in session_data.get("guilds", []):
-            if int(g.get("id", 0)) == guild_id:
-                perms = int(g.get("permissions", 0))
-                if g.get("owner", False) or ((perms & 0x8) != 0) or ((perms & 0x20) != 0):
-                    has_permission = True
-                break
-
-        # 2. Также проверяем прямое членство в объекте гильдии Discord
-        if not has_permission:
-            member = bot_guild.get_member(user_id)
-            if member:
-                if member.guild_permissions.administrator or member.guild_permissions.manage_guild or bot_guild.owner_id == user_id:
-                    has_permission = True
+        if member:
+            if member.guild_permissions.administrator or member.guild_permissions.manage_guild or bot_guild.owner_id == user_id:
+                has_permission = True
+        elif bot_guild.owner_id == user_id:
+            has_permission = True
 
         if not has_permission:
-            return None, None
+            return session_data, None
 
         return session_data, bot_guild
 

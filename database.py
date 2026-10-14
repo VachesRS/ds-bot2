@@ -7,6 +7,8 @@ DB_PATH = "bot.db"
 async def init_db(db_path: str = DB_PATH) -> None:
     """Инициализация базы данных и создание таблиц."""
     async with aiosqlite.connect(db_path) as db:
+        await db.execute("PRAGMA journal_mode=WAL;")
+        await db.execute("PRAGMA busy_timeout=5000;")
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS warnings (
@@ -300,9 +302,8 @@ async def set_feature_toggle(guild_id: int, feature: str, enabled: bool, db_path
         raise ValueError(f"Unknown feature: {feature}")
 
     val = 1 if enabled else 0
+    await get_guild_settings(guild_id, db_path)
     async with aiosqlite.connect(db_path) as db:
-        # Убедимся, что строка существует
-        await get_guild_settings(guild_id, db_path)
         await db.execute(
             f"UPDATE guild_settings SET {feature} = ? WHERE guild_id = ?",
             (val, guild_id)
@@ -312,8 +313,8 @@ async def set_feature_toggle(guild_id: int, feature: str, enabled: bool, db_path
 
 async def set_autorole(guild_id: int, role_id: int, db_path: str = DB_PATH) -> None:
     """Устанавливает или отключает автороль для новых участников (0 - выключено)."""
+    await get_guild_settings(guild_id, db_path)
     async with aiosqlite.connect(db_path) as db:
-        await get_guild_settings(guild_id, db_path)
         await db.execute(
             "UPDATE guild_settings SET autorole_id = ? WHERE guild_id = ?",
             (role_id, guild_id)
@@ -414,8 +415,8 @@ async def get_user_rank(guild_id: int, user_id: int, db_path: str = DB_PATH) -> 
         cursor = await db.execute(
             """
             SELECT COUNT(*) + 1 FROM user_levels
-            WHERE guild_id = ? AND xp > (
-                SELECT COALESCE(xp, 0) FROM user_levels WHERE guild_id = ? AND user_id = ?
+            WHERE guild_id = ? AND xp > COALESCE(
+                (SELECT xp FROM user_levels WHERE guild_id = ? AND user_id = ?), 0
             )
             """,
             (guild_id, guild_id, user_id)
@@ -655,7 +656,7 @@ async def add_temp_channel(channel_id: int, guild_id: int, owner_id: int, db_pat
     import time
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
-            "INSERT INTO active_temp_channels (channel_id, guild_id, owner_id, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO active_temp_channels (channel_id, guild_id, owner_id, created_at) VALUES (?, ?, ?, ?)",
             (channel_id, guild_id, owner_id, time.time())
         )
         await db.commit()

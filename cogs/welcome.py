@@ -100,7 +100,7 @@ async def render_welcome_card(member: discord.Member) -> io.BytesIO:
     guild_name = member.guild.name
     if len(guild_name) > 24:
         guild_name = guild_name[:22] + "..."
-    member_count = member.guild.member_count
+    member_count = member.guild.member_count or len(member.guild.members)
     sub_text = f"на сервер {guild_name} • Участник #{member_count}"
     draw.text((text_x, 175), sub_text, font=font_sub, fill=(203, 213, 225))
 
@@ -112,10 +112,11 @@ async def render_welcome_card(member: discord.Member) -> io.BytesIO:
 
 def format_text(template: str, member: discord.Member) -> str:
     """Форматирует переменные в тексте приветствия."""
+    count_val = member.guild.member_count or len(member.guild.members)
     return template.replace("{user}", member.display_name)\
                    .replace("{mention}", member.mention)\
                    .replace("{server}", member.guild.name)\
-                   .replace("{count}", str(member.guild.member_count))
+                   .replace("{count}", str(count_val))
 
 
 class WelcomeCog(commands.Cog, name="Приветствия"):

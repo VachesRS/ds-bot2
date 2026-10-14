@@ -86,7 +86,7 @@ class AutoModBot(commands.Bot):
         """Событие, когда бот успешно подключился к Discord."""
         activity = discord.Activity(
             type=discord.ActivityType.watching,
-            name="за сервером | /automod_status"
+            name="за сервером | /help"
         )
         await self.change_presence(status=discord.Status.online, activity=activity)
 
@@ -97,35 +97,22 @@ class AutoModBot(commands.Bot):
         logger.info("Автомодерация активна и готова к работе.")
         logger.info("=" * 45)
 
-        # Мгновенная синхронизация слэш-команд для каждого сервера (устраняет 1-часовую задержку кэша Discord)
-        for guild in self.guilds:
+        # Выполняем восстановление настроек только один раз при первом старте
+        if not getattr(self, "_settings_restored", False):
+            self._settings_restored = True
             try:
-                self.tree.copy_global_to(guild=guild)
-                await self.tree.sync(guild=guild)
-                logger.info(f"Слэш-команды успешно синхронизированы для сервера: {guild.name} ({guild.id})")
+                from cloud_sync import restore_all_guilds
+                self._restore_task = asyncio.create_task(restore_all_guilds(self))
             except Exception as e:
-                logger.warning(f"Не удалось синхронизировать команды для {guild.name}: {e}")
-
-        # Автоматическое восстановление настроек всех серверов из облака Discord
-        try:
-            from cloud_sync import restore_all_guilds
-            asyncio.create_task(restore_all_guilds(self))
-        except Exception as e:
-            logger.error(f"Не удалось запустить восстановление настроек: {e}")
+                logger.error(f"Не удалось запустить восстановление настроек: {e}")
 
     async def on_guild_join(self, guild: discord.Guild):
-        """При добавлении на новый сервер — синхронизация команд и создание облачного хранилища."""
+        """При добавлении на новый сервер — синхронизация команд и восстановление/сохранение настроек."""
         try:
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
+            from cloud_sync import restore_guild_settings_from_discord
+            await restore_guild_settings_from_discord(self, guild)
         except Exception as e:
-            logger.warning(f"Не удалось синхронизировать команды для нового сервера {guild.id}: {e}")
-
-        try:
-            from cloud_sync import sync_guild_settings_to_discord
-            await sync_guild_settings_to_discord(self, guild)
-        except Exception as e:
-            logger.error(f"Ошибка при сохранении настроек для нового сервера {guild.id}: {e}")
+            logger.error(f"Ошибка при восстановлении/сохранении настроек для нового сервера {guild.id}: {e}")
 
     async def close(self):
         """Очистка ресурсов при завершении работы бота."""
@@ -154,6 +141,9 @@ def main():
             bot.run(TOKEN)
         except discord.errors.LoginFailure:
             logger.error("Неверный токен бота (LoginFailure)! Проверьте файл .env.")
+            break
+        except discord.errors.PrivilegedIntentsRequired:
+            logger.error("КРИТИЧЕСКАЯ ОШИБКА: Не включены Privileged Gateway Intents (Message Content / Server Members) в Discord Developer Portal! Включите их во вкладке 'Bot' перед запуском.")
             break
         except KeyboardInterrupt:
             logger.info("Бот остановлен пользователем (Ctrl+C).")

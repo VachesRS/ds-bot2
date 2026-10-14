@@ -8,7 +8,11 @@ from database import (
     get_guild_settings,
     set_log_channel,
     set_feature_toggle,
-    set_autorole
+    set_autorole,
+    add_warning,
+    get_warnings,
+    clear_warnings,
+    remove_warning
 )
 from cloud_sync import sync_guild_settings_to_discord
 
@@ -265,6 +269,7 @@ class HelpView(discord.ui.View):
         if interaction.user.id != self.author_id:
             await interaction.response.send_message("❌ Только автор команды может закрыть это меню.", ephemeral=True)
             return
+        await interaction.response.defer()
         if interaction.message:
             await interaction.message.delete()
 
@@ -287,9 +292,24 @@ class Moderation(commands.Cog):
     # ------------------- ТАЙМ-АУТ (МУТ) -------------------
 
     @app_commands.command(name="timeout", description="Замутить (выдать тайм-аут) участнику")
+    # ------------------- ТАЙМ-АУТ (МУТ) -------------------
+
+    @app_commands.command(name="timeout", description="Выдать тайм-аут (замутить) участнику на сервере")
     @app_commands.describe(member="Участник сервера", minutes="Длительность в минутах (макс. 40320 - 28 дней)", reason="Причина")
     @app_commands.checks.has_permissions(moderate_members=True)
     async def timeout(self, interaction: discord.Interaction, member: discord.Member, minutes: int, reason: str = "Нарушение правил"):
+        if member.id == interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете выдать тайм-аут самому себе.", ephemeral=True)
+            return
+
+        if member.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Нельзя выдать тайм-аут боту.", ephemeral=True)
+            return
+
+        if member.bot:
+            await interaction.response.send_message("❌ Discord не позволяет выдавать тайм-аут ботам.", ephemeral=True)
+            return
+
         if minutes <= 0 or minutes > 40320:
             await interaction.response.send_message("❌ Время тайм-аута должно быть от 1 до 40320 минут (28 дней).", ephemeral=True)
             return
@@ -313,16 +333,30 @@ class Moderation(commands.Cog):
             await interaction.response.send_message(embed=embed)
         except discord.Forbidden:
             await interaction.response.send_message("❌ У бота недостаточно прав для выдачи тайм-аута этому пользователю (роль бота должна быть выше роли участника).", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message(f"❌ Ошибка Discord при выдаче тайм-аута: {e}", ephemeral=True)
+
+    @app_commands.command(name="mute", description="Алиас для команды /timeout (замутить участника)")
+    @app_commands.describe(member="Участник сервера", minutes="Длительность в минутах", reason="Причина")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def mute(self, interaction: discord.Interaction, member: discord.Member, minutes: int, reason: str = "Нарушение правил"):
+        await self.timeout(interaction, member, minutes, reason)
 
     @app_commands.command(name="untimeout", description="Снять тайм-аут (размутить) участника")
     @app_commands.describe(member="Участник сервера", reason="Причина снятия тайм-аута")
     @app_commands.checks.has_permissions(moderate_members=True)
     async def untimeout(self, interaction: discord.Interaction, member: discord.Member, reason: str = "Снятие наказания"):
+        if member.top_role >= interaction.user.top_role and interaction.guild.owner_id != interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете снять тайм-аут с участника с ролью равной или выше вашей.", ephemeral=True)
+            return
+
         try:
             await member.timeout(None, reason=f"Модератор: {interaction.user} | {reason}")
             await interaction.response.send_message(f"🔊 Тайм-аут с {member.mention} успешно снят. Причина: *{reason}*")
         except discord.Forbidden:
             await interaction.response.send_message("❌ У бота недостаточно прав для снятия тайм-аута с этого участника.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message(f"❌ Ошибка Discord при снятии тайм-аута: {e}", ephemeral=True)
 
     # ------------------- КИК И БАН -------------------
 
@@ -330,6 +364,14 @@ class Moderation(commands.Cog):
     @app_commands.describe(member="Участник сервера", reason="Причина")
     @app_commands.checks.has_permissions(kick_members=True)
     async def kick(self, interaction: discord.Interaction, member: discord.Member, reason: str = "Нарушение правил"):
+        if member.id == interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете кикнуть самого себя.", ephemeral=True)
+            return
+
+        if member.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Нельзя исключить бота через команду модерации.", ephemeral=True)
+            return
+
         if member.top_role >= interaction.user.top_role and interaction.guild.owner_id != interaction.user.id:
             await interaction.response.send_message("❌ Вы не можете кикнуть участника с ролью равной или выше вашей.", ephemeral=True)
             return
@@ -339,35 +381,111 @@ class Moderation(commands.Cog):
             await interaction.response.send_message(f"👢 {member.mention} был исключен с сервера. Причина: *{reason}*")
         except discord.Forbidden:
             await interaction.response.send_message("❌ У бота недостаточно прав для кика этого участника.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message(f"❌ Ошибка Discord при исключении: {e}", ephemeral=True)
 
     @app_commands.command(name="ban", description="Заблокировать (забанить) участника на сервере")
     @app_commands.describe(member="Участник сервера", reason="Причина", delete_message_days="Удалить сообщения за N дней (0-7)")
     @app_commands.checks.has_permissions(ban_members=True)
     async def ban(self, interaction: discord.Interaction, member: discord.Member, reason: str = "Нарушение правил", delete_message_days: int = 0):
+        if member.id == interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете забанить самого себя.", ephemeral=True)
+            return
+
+        if member.id == self.bot.user.id:
+            await interaction.response.send_message("❌ Нельзя забанить бота через команду модерации.", ephemeral=True)
+            return
+
         if member.top_role >= interaction.user.top_role and interaction.guild.owner_id != interaction.user.id:
             await interaction.response.send_message("❌ Вы не можете забанить участника с ролью равной или выше вашей.", ephemeral=True)
             return
 
         delete_days = max(0, min(7, delete_message_days))
+        delete_seconds = delete_days * 86400
         try:
-            await member.ban(reason=f"Модератор: {interaction.user} | {reason}", delete_message_days=delete_days)
+            await member.ban(reason=f"Модератор: {interaction.user} | {reason}", delete_message_seconds=delete_seconds)
             await interaction.response.send_message(f"🔨 {member.mention} был заблокирован на сервере. Причина: *{reason}*")
         except discord.Forbidden:
             await interaction.response.send_message("❌ У бота недостаточно прав для бана этого участника.", ephemeral=True)
+        except discord.HTTPException as e:
+            await interaction.response.send_message(f"❌ Ошибка Discord при блокировке: {e}", ephemeral=True)
 
-    # ------------------- ОЧИСТКА ЧАТА -------------------
+    # ------------------- ПРЕДУПРЕЖДЕНИЯ (WARNS) -------------------
 
-    @app_commands.command(name="clear", description="Удалить последние сообщения в текущем канале")
-    @app_commands.describe(amount="Количество сообщений для удаления (1-100)")
-    @app_commands.checks.has_permissions(manage_messages=True)
-    async def clear(self, interaction: discord.Interaction, amount: int):
-        if amount < 1 or amount > 100:
-            await interaction.response.send_message("❌ Количество сообщений должно быть от 1 до 100.", ephemeral=True)
+    @app_commands.command(name="warn", description="Выдать официальное предупреждение (варн) участнику")
+    @app_commands.describe(member="Участник сервера", reason="Причина предупреждения")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def warn(self, interaction: discord.Interaction, member: discord.Member, reason: str = "Нарушение правил"):
+        if member.id == interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете выдать предупреждение самому себе.", ephemeral=True)
             return
 
-        await interaction.response.defer(ephemeral=True)
-        deleted = await interaction.channel.purge(limit=amount)
-        await interaction.followup.send(f"🧹 Удалено сообщений: **{len(deleted)}**", ephemeral=True)
+        if member.id == self.bot.user.id or member.bot:
+            await interaction.response.send_message("❌ Нельзя выдать предупреждение боту.", ephemeral=True)
+            return
+
+        if member.top_role >= interaction.user.top_role and interaction.guild.owner_id != interaction.user.id:
+            await interaction.response.send_message("❌ Вы не можете выдать предупреждение участнику с ролью равной или выше вашей.", ephemeral=True)
+            return
+
+        warn_id = await add_warning(interaction.guild_id, member.id, interaction.user.id, reason)
+        all_warns = await get_warnings(interaction.guild_id, member.id)
+
+        embed = discord.Embed(
+            title="⚠️ Выдано предупреждение",
+            color=discord.Color.yellow(),
+            timestamp=datetime.utcnow()
+        )
+        embed.add_field(name="Участник", value=f"{member.mention} (`{member.id}`)", inline=True)
+        embed.add_field(name="Модератор", value=interaction.user.mention, inline=True)
+        embed.add_field(name="Всего варнов", value=f"**{len(all_warns)}**", inline=True)
+        embed.add_field(name="Причина", value=reason, inline=False)
+        embed.set_footer(text=f"ID варна: #{warn_id}")
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="warnings", description="Посмотреть список предупреждений участника")
+    @app_commands.describe(member="Участник сервера")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def warnings(self, interaction: discord.Interaction, member: discord.Member):
+        warns = await get_warnings(interaction.guild_id, member.id)
+        if not warns:
+            await interaction.response.send_message(f"✅ У участника {member.mention} нет активных предупреждений.", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title=f"⚠️ Предупреждения: {member.display_name}",
+            description=f"Всего предупреждений: **{len(warns)}**",
+            color=discord.Color.orange(),
+            timestamp=datetime.utcnow()
+        )
+        for w in warns[:15]:
+            mod = interaction.guild.get_member(w["moderator_id"])
+            mod_text = mod.mention if mod else f"ID: {w['moderator_id']}"
+            embed.add_field(
+                name=f"Варн #{w['id']} • {w['created_at']}",
+                value=f"**Модератор:** {mod_text}\n**Причина:** {w['reason']}",
+                inline=False
+            )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="unwarn", description="Удалить конкретное предупреждение по ID")
+    @app_commands.describe(warn_id="ID предупреждения")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def unwarn(self, interaction: discord.Interaction, warn_id: int):
+        removed = await remove_warning(warn_id, interaction.guild_id)
+        if removed:
+            await interaction.response.send_message(f"✅ Предупреждение **#{warn_id}** успешно снято.", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"❌ Предупреждение с ID **#{warn_id}** не найдено на этом сервере.", ephemeral=True)
+
+    @app_commands.command(name="clearwarns", description="Очистить все предупреждения участника")
+    @app_commands.describe(member="Участник сервера")
+    @app_commands.checks.has_permissions(moderate_members=True)
+    async def clearwarns(self, interaction: discord.Interaction, member: discord.Member):
+        count = await clear_warnings(interaction.guild_id, member.id)
+        await interaction.response.send_message(f"🧹 Удалено **{count}** предупреждений у {member.mention}.", ephemeral=True)
+
 
     # ------------------- НАСТРОЙКИ АВТОМОДЕРАЦИИ -------------------
 

@@ -125,8 +125,20 @@ class GiveawaysCog(commands.Cog, name="Розыгрыши"):
 
     async def _finish_giveaway(self, gw: dict):
         """Завершение розыгрыша, выбор победителей и публикация результатов."""
+        # Атомарно помечаем розыгрыш завершенным СРАЗУ, чтобы избежать параллельного выбора победителей
+        current_gw = await get_giveaway(gw["id"])
+        if not current_gw or current_gw["status"] != "active":
+            return
+        await end_giveaway(gw["id"], status="ended")
+
         channel = self.bot.get_channel(gw["channel_id"])
-        if not channel or not isinstance(channel, discord.TextChannel):
+        if not channel:
+            try:
+                channel = await self.bot.fetch_channel(gw["channel_id"])
+            except Exception:
+                channel = None
+
+        if not channel or not hasattr(channel, "send"):
             await end_giveaway(gw["id"], status="ended_no_channel")
             return
 
@@ -168,13 +180,18 @@ class GiveawaysCog(commands.Cog, name="Розыгрыши"):
         embed.set_footer(text="Поздравляем с победой!")
 
         if message:
-            await message.edit(embed=embed, view=None)
+            try:
+                await message.edit(embed=embed, view=None)
+            except Exception:
+                pass
 
         # Отправляем поздравление в канал
         congrats_text = f"🎊 Поздравляем {', '.join(winner_mentions)}! Вы выиграли приз: **{gw['prize']}**!"
-        await channel.send(content=congrats_text)
+        try:
+            await channel.send(content=congrats_text)
+        except Exception as send_err:
+            logger.warning(f"Не удалось отправить поздравление в канал {channel.id}: {send_err}")
 
-        await end_giveaway(gw["id"], status="ended")
         logger.info(f"Розыгрыш {gw['id']} успешно завершен. Победители: {winner_ids}")
 
     giveaway_group = app_commands.Group(name="giveaway", description="Управление розыгрышами призов")

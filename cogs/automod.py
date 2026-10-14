@@ -172,6 +172,15 @@ class AutoMod(commands.Cog):
         except Exception as e:
             print(f"⚠️ [AutoMod Error] Ошибка в обработчике on_message: {e}")
 
+    @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        """Проверка сообщений при редактировании нарушителем."""
+        try:
+            if before.content != after.content or before.attachments != after.attachments:
+                await self.process_message(after)
+        except Exception as e:
+            print(f"⚠️ [AutoMod Error] Ошибка в обработчике on_message_edit: {e}")
+
     async def process_message(self, message: discord.Message):
         # Игнорируем сообщения от ботов и сообщения вне серверов (в ЛС)
         if not message.guild or not isinstance(message.author, discord.Member):
@@ -428,6 +437,9 @@ class AutoMod(commands.Cog):
                                     any(att.filename.lower().endswith(ext) for ext in [".mp4", ".webm", ".mov", ".avi", ".mkv"])
 
                     if is_image_file:
+                        # Защита от OOM: ограничение размера картинки до 15 МБ
+                        if att.size and att.size > 15 * 1024 * 1024:
+                            continue
                         try:
                             file_data = await att.read()
                             is_gif = att.filename.lower().endswith(".gif") or (att.content_type and "gif" in att.content_type)
@@ -481,7 +493,10 @@ class AutoMod(commands.Cog):
                                     if content_len and int(content_len) > 20 * 1024 * 1024:
                                         continue
 
-                                    data = await resp.read()
+                                    # Защита от OOM если Content-Length опущен
+                                    data = await resp.content.read(20 * 1024 * 1024 + 1)
+                                    if len(data) > 20 * 1024 * 1024:
+                                        continue
                                     is_video = any(media_url.lower().endswith(ext) for ext in [".mp4", ".webm", ".mov"]) or (resp.content_type and "video" in resp.content_type)
                                     if is_video:
                                         flagged, score, reason = await asyncio.to_thread(detector.analyze_video_bytes, data, 6)
@@ -567,6 +582,12 @@ class AutoMod(commands.Cog):
         except Exception as e:
             print(f"⚠️ [AutoRole] Ошибка при выдаче роли новому участнику: {e}")
 
+
+
+    async def cog_unload(self):
+        """Очистка сессий при выгрузке кога."""
+        if self.session and not self.session.closed:
+            await self.session.close()
 
 
 async def setup(bot: commands.Bot):

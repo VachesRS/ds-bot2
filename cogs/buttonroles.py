@@ -233,6 +233,7 @@ class ButtonRolesCog(commands.Cog, name="Роли по кнопкам"):
             return
 
         mid = int(message_id)
+        await interaction.response.defer(ephemeral=True)
         # Ищем канал сообщения
         target_message = None
         for ch in interaction.guild.text_channels:
@@ -244,11 +245,11 @@ class ButtonRolesCog(commands.Cog, name="Роли по кнопкам"):
                 continue
 
         if not target_message:
-            await interaction.response.send_message("❌ Сообщение с указанным ID не найдено ни в одном канале сервера.", ephemeral=True)
+            await interaction.followup.send("❌ Сообщение с указанным ID не найдено ни в одном канале сервера.", ephemeral=True)
             return
 
         if target_message.author.id != self.bot.user.id:
-            await interaction.response.send_message("❌ Кнопки можно добавлять только к сообщениям, отправленным самим ботом!", ephemeral=True)
+            await interaction.followup.send("❌ Кнопки можно добавлять только к сообщениям, отправленным самим ботом!", ephemeral=True)
             return
 
         style_str = style.value if style else "primary"
@@ -282,7 +283,7 @@ class ButtonRolesCog(commands.Cog, name="Роли по кнопкам"):
         await target_message.edit(view=new_view)
         self.bot.add_view(new_view, message_id=mid)
 
-        await interaction.response.send_message(f"✅ Кнопка для роли {role.mention} успешно добавлена к сообщению!", ephemeral=True)
+        await interaction.followup.send(f"✅ Кнопка для роли {role.mention} успешно добавлена к сообщению!", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

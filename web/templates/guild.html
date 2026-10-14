@@ -629,7 +629,8 @@ async function saveSettings() {
     const toggles = [
         'anti_toxicity', 'anti_nsfw', 'anti_spam', 'anti_invite',
         'anti_caps', 'anti_mass_mention', 'ignore_admins',
-        'welcome_enabled', 'levels_enabled', 'temp_voice_enabled'
+        'welcome_enabled', 'welcome_send_card', 'levels_enabled',
+        'levels_voice_xp_enabled', 'temp_voice_enabled'
     ];
     toggles.forEach(t => {
         if (!(t in payload)) {

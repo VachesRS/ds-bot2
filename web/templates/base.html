@@ -169,10 +169,12 @@
             toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${
                 isSuccess ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
             }`;
-            toast.innerHTML = `
-                <i class="fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i>
-                <span>${message}</span>
-            `;
+            const icon = document.createElement('i');
+            icon.className = `fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'}`;
+            const span = document.createElement('span');
+            span.textContent = message;
+            toast.appendChild(icon);
+            toast.appendChild(span);
             container.appendChild(toast);
             setTimeout(() => {
                 toast.classList.remove('translate-y-2', 'opacity-0');

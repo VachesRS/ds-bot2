@@ -225,7 +225,8 @@ class LevelsCog(commands.Cog, name="Уровни и ранги"):
                                 if rew["level"] == new_level:
                                     role_id = rew["role_id"]
                                     reward_role = guild.get_role(role_id)
-                                    if reward_role and guild.me.guild_permissions.manage_roles:
+                                    bot_member = guild.me or guild.get_member(self.bot.user.id)
+                                    if reward_role and bot_member and bot_member.guild_permissions.manage_roles and reward_role < bot_member.top_role:
                                         try:
                                             await member.add_roles(reward_role, reason=f"Kobi: Награда за {new_level} уровень в войсе!")
                                         except Exception as e:
@@ -274,6 +275,12 @@ class LevelsCog(commands.Cog, name="Уровни и ранги"):
         last_time = _xp_cooldowns.get(cooldown_key, 0.0)
         if now - last_time < 60:
             return
+
+        # Периодическая очистка устаревших кулдаунов (защита от утечки памяти)
+        if len(_xp_cooldowns) > 1000:
+            expired_keys = [k for k, t in _xp_cooldowns.items() if now - t > 120]
+            for k in expired_keys:
+                _xp_cooldowns.pop(k, None)
 
         _xp_cooldowns[cooldown_key] = now
 

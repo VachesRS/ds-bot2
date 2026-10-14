@@ -139,11 +139,10 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
             if isinstance(custom_cat, discord.CategoryChannel):
                 category = custom_cat
 
-        # 4. Формируем права для новой комнаты
+        # 4. Формируем права для новой комнаты (управление происходит через слэш-команды /voice)
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(connect=True, speak=True),
             member: discord.PermissionOverwrite(
-                manage_channels=True,
                 move_members=True,
                 mute_members=True,
                 deafen_members=True,
@@ -494,9 +493,15 @@ class TempVoiceCog(commands.Cog, name="Временные войс-комнат�
             await interaction.response.send_message("❌ Вы не являетесь владельцем этой временной комнаты.", ephemeral=True)
             return
 
+        await interaction.response.defer(ephemeral=True)
         cleaned_name = name.strip()[:90]
-        await channel.edit(name=cleaned_name)
-        await interaction.response.send_message(f"✏️ Комната переименована в: **{cleaned_name}**", ephemeral=True)
+        try:
+            await channel.edit(name=cleaned_name)
+            await interaction.followup.send(f"✏️ Комната переименована в: **{cleaned_name}**", ephemeral=True)
+        except discord.RateLimited as rl:
+            await interaction.followup.send("⏳ Слишком частые переименования канала (ограничение Discord). Попробуйте позже.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Не удалось переименовать комнату: {e}", ephemeral=True)
 
     @voice_user.command(name="kick", description="Выгнать участника из вашей временной комнаты.")
     @app_commands.describe(member="Участник, которого нужно выгнать")

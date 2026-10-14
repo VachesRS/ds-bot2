@@ -96,7 +96,11 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
         }
 
         json_payload = json.dumps(data, indent=2, ensure_ascii=False)
-        message_content = f"{SETTINGS_HEADER}\n```json\n{json_payload}\n```"
+        is_large = len(json_payload) > 1700
+        if not is_large:
+            message_content = f"{SETTINGS_HEADER}\n```json\n{json_payload}\n```"
+        else:
+            message_content = f"{SETTINGS_HEADER}\n📁 Конфигурация сохранена во вложенном файле `kobi_settings.json`"
 
         embed = discord.Embed(
             title="🐾 Kobi — Облачное хранилище настроек",
@@ -118,19 +122,38 @@ async def sync_guild_settings_to_discord(bot: commands.Bot, guild: discord.Guild
         embed.add_field(name="ИИ Оскорбления", value="Вкл" if data["anti_toxicity"] else "Выкл", inline=True)
 
         target_message = None
-        async for msg in channel.history(limit=25):
-            if msg.author.id == bot.user.id and (SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content):
-                target_message = msg
+        pinned = await channel.pins()
+        for p in pinned:
+            if p.author.id == bot.user.id and (SETTINGS_HEADER in p.content or LEGACY_HEADER in p.content):
+                target_message = p
                 break
 
-        if target_message:
-            await target_message.edit(content=message_content, embed=embed)
+        if not target_message:
+            async for msg in channel.history(limit=50):
+                if msg.author.id == bot.user.id and (SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content):
+                    target_message = msg
+                    break
+
+        import io
+        if is_large:
+            file = discord.File(io.BytesIO(json_payload.encode("utf-8")), filename="kobi_settings.json")
+            if target_message:
+                await target_message.edit(content=message_content, embed=embed, attachments=[file])
+            else:
+                new_msg = await channel.send(content=message_content, embed=embed, file=file)
+                try:
+                    await new_msg.pin(reason="Kobi: Закрепление файла настроек")
+                except Exception:
+                    pass
         else:
-            new_msg = await channel.send(content=message_content, embed=embed)
-            try:
-                await new_msg.pin(reason="Kobi: Закрепление файла настроек")
-            except Exception:
-                pass
+            if target_message:
+                await target_message.edit(content=message_content, embed=embed)
+            else:
+                new_msg = await channel.send(content=message_content, embed=embed)
+                try:
+                    await new_msg.pin(reason="Kobi: Закрепление файла настроек")
+                except Exception:
+                    pass
 
         logger.info(f"Настройки сервера '{guild.name}' успешно синхронизированы в Discord!")
         return True
@@ -154,17 +177,44 @@ async def restore_guild_settings_from_discord(bot: commands.Bot, guild: discord.
             return False
 
         found_data = None
-        async for msg in channel.history(limit=30):
-            if SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content:
-                content = msg.content
-                if "```json" in content and "```" in content.split("```json", 1)[1]:
-                    json_str = content.split("```json", 1)[1].split("```", 1)[0].strip()
-                    found_data = json.loads(json_str)
+        pinned = await channel.pins()
+        target_messages = [p for p in pinned if SETTINGS_HEADER in p.content or LEGACY_HEADER in p.content]
+        if not target_messages:
+            async for msg in channel.history(limit=50):
+                if SETTINGS_HEADER in msg.content or LEGACY_HEADER in msg.content:
+                    target_messages.append(msg)
                     break
 
+        for msg in target_messages:
+            # 1. Если данные прикреплены как файл
+            if msg.attachments:
+                for att in msg.attachments:
+                    if att.filename.endswith(".json"):
+                        try:
+                            file_bytes = await att.read()
+                            found_data = json.loads(file_bytes.decode("utf-8"))
+                            break
+                        except Exception:
+                            pass
+                if found_data:
+                    break
+
+            # 2. Если данные внутри текста
+            content = msg.content
+            if "```json" in content:
+                try:
+                    after_fence = content.split("```json", 1)[1]
+                    json_str = after_fence.rsplit("```", 1)[0].strip()
+                    found_data = json.loads(json_str)
+                    break
+                except Exception:
+                    pass
+
         if not found_data:
-            # Сообщения нет — создаем его из текущих настроек
-            await sync_guild_settings_to_discord(bot, guild)
+            # Если в SQLite есть реальные локальные данные, синхронизируем их в облако
+            local_set = await get_guild_settings(guild.id)
+            if local_set.get("log_channel_id", 0) > 0 or local_set.get("autorole_id", 0) > 0:
+                await sync_guild_settings_to_discord(bot, guild)
             return False
 
         # Записываем восстановленные данные в SQLite базу данных
@@ -221,7 +271,8 @@ async def restore_guild_settings_from_discord(bot: commands.Bot, guild: discord.
                 guild_id=guild.id,
                 enabled=bool(lvl.get("enabled", 1)),
                 announce_channel_id=int(lvl.get("announce_channel_id", 0)),
-                xp_rate=float(lvl.get("xp_rate", 1.0))
+                xp_rate=float(lvl.get("xp_rate", 1.0)),
+                voice_xp_enabled=bool(lvl.get("voice_xp_enabled", 1))
             )
 
         if "level_rewards" in found_data and isinstance(found_data["level_rewards"], list):
