@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 import aiohttp
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from database import get_guild_settings
 from nsfw_detector import detector
@@ -46,17 +46,27 @@ class AutoMod(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        # История сообщений для защиты от флуда: (guild_id, user_id) -> list[timestamp]
+        # История сообщений для защиты от флуда: (guild_id, user_id) -> list[(timestamp, text)]
         self.message_timestamps = defaultdict(list)
-        # Кулдаун предупреждений в чат, чтобы не спамить пользователю: (guild_id, user_id) -> last_warn_time
-        self.warn_cooldowns = {}
         self.session: aiohttp.ClientSession | None = None
+        self.cleanup_timestamps_task.start()
         try:
             self.toxicity_detector = ToxicityDetector()
         except Exception as e:
             import logging
             logging.getLogger("AutoMod").error(f"Не удалось загрузить ToxicityDetector: {e}")
             self.toxicity_detector = None
+
+    @tasks.loop(minutes=5)
+    async def cleanup_timestamps_task(self):
+        """Очищает устаревшие записи истории сообщений для предотвращения утечки памяти."""
+        now = time.time()
+        stale_keys = [
+            k for k, history in list(self.message_timestamps.items())
+            if not history or (now - history[-1][0] > 60.0)
+        ]
+        for k in stale_keys:
+            self.message_timestamps.pop(k, None)
 
     async def check_image_nsfw_api(self, image_url: str, api_key: str) -> tuple[bool, str]:
         """Проверяет изображение через ModerateContent API на наличие контента 18+."""
@@ -207,6 +217,11 @@ class AutoMod(commands.Cog):
 
         # 1. Защита от спама и флуда
         if settings.get("anti_spam", 1):
+            if len(self.message_timestamps) > 500:
+                stale_cutoff = now - 60.0
+                for k in [k for k, h in list(self.message_timestamps.items()) if not h or h[-1][0] < stale_cutoff]:
+                    self.message_timestamps.pop(k, None)
+
             history = self.message_timestamps[user_key]
             # Оставляем только сообщения за последние 15 секунд: list[(timestamp, clean_text)]
             history = [(t, c) for t, c in history if now - t < 15.0]
@@ -226,7 +241,7 @@ class AutoMod(commands.Cog):
                     is_repeat_spam = True
 
             if is_flood or is_repeat_spam:
-                self.message_timestamps[user_key] = []
+                self.message_timestamps.pop(user_key, None)
                 reason_type = "Повторяющийся спам" if is_repeat_spam else "Флуд"
 
                 # Удаляем все сообщения нарушителя за последние 30-35 секунд в этом канале
@@ -585,7 +600,8 @@ class AutoMod(commands.Cog):
 
 
     async def cog_unload(self):
-        """Очистка сессий при выгрузке кога."""
+        """Очистка сессий и фоновых задач при выгрузке кога."""
+        self.cleanup_timestamps_task.cancel()
         if self.session and not self.session.closed:
             await self.session.close()
 

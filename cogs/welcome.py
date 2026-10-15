@@ -1,3 +1,4 @@
+import asyncio
 import os
 import io
 import logging
@@ -38,8 +39,13 @@ def get_font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 
-async def render_welcome_card(member: discord.Member) -> io.BytesIO:
-    """Генерирует приветственную графическую открытку с аватаром новичка."""
+def _draw_welcome_card_sync(
+    avatar_bytes: Optional[bytes],
+    display_name: str,
+    guild_name: str,
+    member_count: int
+) -> io.BytesIO:
+    """Синхронная отрисовка открытки в отдельном потоке (без блокировки event loop)."""
     width, height = 900, 300
     image = Image.new("RGBA", (width, height), (15, 17, 24, 255))
     draw = ImageDraw.Draw(image)
@@ -49,20 +55,16 @@ async def render_welcome_card(member: discord.Member) -> io.BytesIO:
     card_border = (79, 70, 229, 255)
     draw.rounded_rectangle([12, 12, width - 12, height - 12], radius=24, fill=card_bg, outline=card_border, width=2)
 
-    # Загрузка аватара
+    # Отрисовка аватара
     avatar_size = 180
     avatar_pos = (55, 60)
     avatar_image = None
 
-    try:
-        avatar_url = member.display_avatar.with_format("png").with_size(256).url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(avatar_url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
-                if resp.status == 200:
-                    avatar_bytes = await resp.read()
-                    avatar_image = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
-    except Exception as e:
-        logger.warning(f"Не удалось загрузить аватар {member.name} для открытки: {e}")
+    if avatar_bytes:
+        try:
+            avatar_image = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
+        except Exception:
+            avatar_image = None
 
     if not avatar_image:
         avatar_image = Image.new("RGBA", (avatar_size, avatar_size), (88, 101, 242, 255))
@@ -91,23 +93,44 @@ async def render_welcome_card(member: discord.Member) -> io.BytesIO:
     draw.text((text_x, 65), "ДОБРО ПОЖАЛОВАТЬ!", font=font_title, fill=(255, 255, 255))
 
     # Никнейм
-    uname = member.display_name
+    uname = display_name
     if len(uname) > 22:
         uname = uname[:20] + "..."
     draw.text((text_x, 125), uname, font=font_name, fill=(129, 140, 248))
 
     # Подзаголовок
-    guild_name = member.guild.name
-    if len(guild_name) > 24:
-        guild_name = guild_name[:22] + "..."
-    member_count = member.guild.member_count or len(member.guild.members)
-    sub_text = f"на сервер {guild_name} • Участник #{member_count}"
+    gname = guild_name
+    if len(gname) > 24:
+        gname = gname[:22] + "..."
+    sub_text = f"на сервер {gname} • Участник #{member_count}"
     draw.text((text_x, 175), sub_text, font=font_sub, fill=(203, 213, 225))
 
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
+
+
+async def render_welcome_card(member: discord.Member) -> io.BytesIO:
+    """Генерирует приветственную графическую открытку с аватаром новичка (асинхронно)."""
+    avatar_bytes: Optional[bytes] = None
+    try:
+        avatar_url = member.display_avatar.with_format("png").with_size(256).url
+        async with aiohttp.ClientSession() as session:
+            async with session.get(avatar_url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
+                if resp.status == 200:
+                    avatar_bytes = await resp.read()
+    except Exception as e:
+        logger.warning(f"Не удалось загрузить аватар {member.name} для открытки: {e}")
+
+    member_count = member.guild.member_count or len(member.guild.members)
+    return await asyncio.to_thread(
+        _draw_welcome_card_sync,
+        avatar_bytes,
+        member.display_name,
+        member.guild.name,
+        member_count
+    )
 
 
 def format_text(template: str, member: discord.Member) -> str:

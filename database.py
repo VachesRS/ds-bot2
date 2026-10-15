@@ -371,40 +371,37 @@ async def get_user_level(guild_id: int, user_id: int, db_path: str = DB_PATH) ->
 
 async def add_user_xp(guild_id: int, user_id: int, xp_amount: int, db_path: str = DB_PATH) -> tuple[int, int, bool]:
     """
-    Добавляет XP пользователю.
+    Добавляет XP пользователю атомарно в базе данных.
     Возвращает (новый_уровень, суммарный_XP, повысился_ли_уровень).
     """
     import time
     now = time.time()
     async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
+        # Атомарный UPSERT: увеличение опыта прямо внутри SQLite исключает race condition при одновременных сообщениях
         cursor = await db.execute(
-            "SELECT xp, level FROM user_levels WHERE guild_id = ? AND user_id = ?",
-            (guild_id, user_id)
+            """
+            INSERT INTO user_levels (guild_id, user_id, xp, level, last_xp_time)
+            VALUES (?, ?, ?, 0, ?)
+            ON CONFLICT(guild_id, user_id) DO UPDATE SET
+                xp = user_levels.xp + excluded.xp,
+                last_xp_time = excluded.last_xp_time
+            RETURNING xp, level
+            """,
+            (guild_id, user_id, xp_amount, now)
         )
         row = await cursor.fetchone()
-        if row:
-            old_xp = row["xp"]
-            old_level = row["level"]
-        else:
-            old_xp = 0
-            old_level = 0
+        new_total_xp = row[0]
+        old_level = row[1]
 
-        new_total_xp = old_xp + xp_amount
         new_level, _, _ = calculate_level_from_xp(new_total_xp)
         did_level_up = new_level > old_level
 
-        await db.execute(
-            """
-            INSERT INTO user_levels (guild_id, user_id, xp, level, last_xp_time)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(guild_id, user_id) DO UPDATE SET
-                xp = excluded.xp,
-                level = excluded.level,
-                last_xp_time = excluded.last_xp_time
-            """,
-            (guild_id, user_id, new_total_xp, new_level, now)
-        )
+        if new_level != old_level:
+            await db.execute(
+                "UPDATE user_levels SET level = ? WHERE guild_id = ? AND user_id = ?",
+                (new_level, guild_id, user_id)
+            )
+
         await db.commit()
         return new_level, new_total_xp, did_level_up
 

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import io
 import time
@@ -54,14 +55,16 @@ def get_font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 
-async def render_rank_card(
-    member: discord.Member,
+def _draw_rank_card_sync(
+    avatar_bytes: Optional[bytes],
+    member_status: discord.Status,
+    display_name: str,
     rank: int,
     level: int,
     cur_xp: int,
     needed_xp: int
 ) -> io.BytesIO:
-    """Генерирует стильную карточку ранга с поддержкой кириллицы и четкой графикой."""
+    """Синхронная отрисовка карточки ранга в отдельном потоке (без блокировки event loop)."""
     width, height = 920, 260
     image = Image.new("RGBA", (width, height), (15, 17, 24, 255))
     draw = ImageDraw.Draw(image)
@@ -71,20 +74,16 @@ async def render_rank_card(
     card_border = (79, 70, 229, 255)
     draw.rounded_rectangle([10, 10, width - 10, height - 10], radius=24, fill=card_bg, outline=card_border, width=2)
 
-    # 2. Загрузка и отрисовка аватарки пользователя
+    # 2. Отрисовка аватарки пользователя
     avatar_size = 150
     avatar_pos = (50, 55)
     avatar_image = None
 
-    try:
-        avatar_url = member.display_avatar.with_format("png").with_size(256).url
-        async with aiohttp.ClientSession() as session:
-            async with session.get(avatar_url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
-                if resp.status == 200:
-                    avatar_bytes = await resp.read()
-                    avatar_image = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
-    except Exception as e:
-        logger.warning(f"Не удалось загрузить аватарку {member.name}: {e}")
+    if avatar_bytes:
+        try:
+            avatar_image = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
+        except Exception:
+            avatar_image = None
 
     if not avatar_image:
         avatar_image = Image.new("RGBA", (avatar_size, avatar_size), (88, 101, 242, 255))
@@ -110,7 +109,7 @@ async def render_rank_card(
         discord.Status.dnd: (239, 68, 68),
         discord.Status.offline: (148, 163, 184)
     }
-    status_col = status_colors.get(member.status, (148, 163, 184))
+    status_col = status_colors.get(member_status, (148, 163, 184))
     draw.ellipse((avatar_pos[0] + avatar_size - 34, avatar_pos[1] + avatar_size - 34, avatar_pos[0] + avatar_size + 2, avatar_pos[1] + avatar_size + 2), fill=card_bg)
     draw.ellipse((avatar_pos[0] + avatar_size - 30, avatar_pos[1] + avatar_size - 30, avatar_pos[0] + avatar_size - 2, avatar_pos[1] + avatar_size - 2), fill=status_col)
 
@@ -120,7 +119,7 @@ async def render_rank_card(
     font_small = get_font(18, bold=False)
 
     text_x = 230
-    username = member.display_name
+    username = display_name
     if len(username) > 18:
         username = username[:16] + "..."
     draw.text((text_x, 60), username, font=font_large, fill=(255, 255, 255, 255))
@@ -161,6 +160,36 @@ async def render_rank_card(
     image.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
+
+
+async def render_rank_card(
+    member: discord.Member,
+    rank: int,
+    level: int,
+    cur_xp: int,
+    needed_xp: int
+) -> io.BytesIO:
+    """Генерирует стильную карточку ранга с поддержкой кириллицы (асинхронно)."""
+    avatar_bytes: Optional[bytes] = None
+    try:
+        avatar_url = member.display_avatar.with_format("png").with_size(256).url
+        async with aiohttp.ClientSession() as session:
+            async with session.get(avatar_url, timeout=aiohttp.ClientTimeout(total=4)) as resp:
+                if resp.status == 200:
+                    avatar_bytes = await resp.read()
+    except Exception as e:
+        logger.warning(f"Не удалось загрузить аватарку {member.name}: {e}")
+
+    return await asyncio.to_thread(
+        _draw_rank_card_sync,
+        avatar_bytes,
+        member.status,
+        member.display_name,
+        rank,
+        level,
+        cur_xp,
+        needed_xp
+    )
 
 
 class LevelsCog(commands.Cog, name="Уровни и ранги"):
