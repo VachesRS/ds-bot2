@@ -291,9 +291,6 @@ class Moderation(commands.Cog):
 
     # ------------------- ТАЙМ-АУТ (МУТ) -------------------
 
-    @app_commands.command(name="timeout", description="Замутить (выдать тайм-аут) участнику")
-    # ------------------- ТАЙМ-АУТ (МУТ) -------------------
-
     @app_commands.command(name="timeout", description="Выдать тайм-аут (замутить) участнику на сервере")
     @app_commands.describe(member="Участник сервера", minutes="Длительность в минутах (макс. 40320 - 28 дней)", reason="Причина")
     @app_commands.checks.has_permissions(moderate_members=True)
