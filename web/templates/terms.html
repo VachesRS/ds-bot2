@@ -3,35 +3,51 @@
 {% block title %}Kobi — Условия использования (Terms of Service){% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8 sm:py-12">
-    <div class="mb-10 text-center sm:text-left">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <i class="fa-solid fa-file-contract"></i>
+<div class="max-w-4xl mx-auto py-6 sm:py-10">
+    <div class="mb-8 sm:mb-10 text-center sm:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/25 text-brand-300 text-xs font-semibold uppercase tracking-wider mb-4 font-mono">
+            <svg class="w-3.5 h-3.5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
             <span>Юридическая информация</span>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-3">Условия использования (Terms of Service)</h1>
-        <p class="text-sm text-gray-400">Дата последнего обновления: 10 октября 2026 г. • Разработано командой <b>VRST Team</b></p>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">Условия использования (Terms of Service)</h1>
+        <p class="text-xs sm:text-sm text-gray-400">Дата последнего обновления: 10 октября 2026 г. • Разработано командой <b class="text-white">VRST Team</b></p>
     </div>
 
-    <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-white/10 space-y-8 text-gray-300 text-sm leading-relaxed">
+    <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-white/[0.08] space-y-8 text-gray-300 text-sm leading-relaxed">
         
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-handshake text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
                 <span>1. Принятие условий</span>
             </h2>
             <p>
-                Используя многофункционального Discord-бота <b>Kobi</b> («Бот») или связанную с ним веб-панель управления («Сервис»), вы соглашаетесь соблюдать настоящие Условия использования. Если вы не согласны с какими-либо положениями, пожалуйста, прекратите использование Бота и удалите его со своего сервера Discord.
+                Используя многофункционального Discord-бота <b class="text-white">Kobi</b> («Бот») или связанную с ним веб-панель управления («Сервис»), вы соглашаетесь соблюдать настоящие Условия использования. Если вы не согласны с какими-либо положениями, пожалуйста, прекратите использование Бота и удалите его со своего сервера Discord.
             </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-shield-halved text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
                 <span>2. Правила использования и ограничения</span>
             </h2>
             <p class="mb-3">
-                При использовании Kobi вы обязуетесь строго соблюдать <a href="https://discord.com/terms" target="_blank" class="text-brand-400 underline hover:text-brand-300">Условия обслуживания Discord</a> и <a href="https://discord.com/guidelines" target="_blank" class="text-brand-400 underline hover:text-brand-300">Правила сообщества Discord</a>.
+                При использовании Kobi вы обязуетесь строго соблюдать <a href="https://discord.com/terms" target="_blank" class="text-brand-400 underline hover:text-brand-300 cursor-pointer">Условия обслуживания Discord</a> и <a href="https://discord.com/guidelines" target="_blank" class="text-brand-400 underline hover:text-brand-300 cursor-pointer">Правила сообщества Discord</a>.
             </p>
             <p class="mb-2 font-semibold text-white">Запрещается:</p>
             <ul class="list-disc list-inside space-y-1.5 text-gray-400 ml-2">
@@ -43,28 +59,45 @@
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-server text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                        <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                        <line x1="6" y1="6" x2="6.01" y2="6"/>
+                        <line x1="6" y1="18" x2="6.01" y2="18"/>
+                    </svg>
+                </div>
                 <span>3. Предоставление функций</span>
             </h2>
             <p>
-                Команда <b>VRST Team</b> предоставляет функции автомодерации, системы уровней, ролей по кнопкам, временных голосовых каналов и веб-панели управления «как есть» (AS IS). Мы прилагаем максимальные усилия для обеспечения круглосуточной стабильности (99.9% Uptime), однако не гарантируем абсолютное отсутствие перебоев, вызванных сбоями в API Discord или хостинг-провайдеров.
+                Команда <b class="text-white">VRST Team</b> предоставляет функции автомодерации, системы уровней, ролей по кнопкам, временных голосовых каналов и веб-панели управления «как есть» (AS IS). Мы прилагаем максимальные усилия для обеспечения круглосуточной стабильности (99.9% Uptime), однако не гарантируем абсолютное отсутствие перебоев, вызванных сбоями в API Discord или хостинг-провайдеров.
             </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-copyright text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M14.83 14.83a4 4 0 1 1 0-5.66"/>
+                    </svg>
+                </div>
                 <span>4. Интеллектуальная собственность</span>
             </h2>
             <p>
-                Все права на исходный код бота Kobi, фирменного маскота, логотипы, веб-интерфейс и бренд <b>VRST Team</b> принадлежат команде разработчиков VRST Team. Все права защищены.
+                Все права на исходный код бота Kobi, фирменного маскота, логотипы, веб-интерфейс и бренд <b class="text-white">VRST Team</b> принадлежат команде разработчиков VRST Team. Все права защищены.
             </p>
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-ban text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                </div>
                 <span>5. Прекращение доступа</span>
             </h2>
             <p>
@@ -73,20 +106,28 @@
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2.5">
-                <i class="fa-solid fa-envelope text-brand-400"></i>
+            <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-brand-500/15 border border-brand-500/25 text-brand-300 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </div>
                 <span>6. Контакты и обратная связь</span>
             </h2>
             <p>
-                По любым вопросам, связанным с настоящими Условиями использования или работой Kobi, вы можете обратиться к команде разработчиков <b>VRST Team</b> через наш сервер поддержки Discord или панель управления ботом.
+                По любым вопросам, связанным с настоящими Условиями использования или работой Kobi, вы можете обратиться к команде разработчиков <b class="text-white">VRST Team</b> через наш сервер поддержки Discord или панель управления ботом.
             </p>
         </section>
 
     </div>
 
     <div class="mt-8 text-center">
-        <a href="/" class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors font-medium">
-            <i class="fa-solid fa-arrow-left"></i>
+        <a href="/" class="inline-flex items-center gap-2 text-xs sm:text-sm text-brand-400 hover:text-brand-300 transition-colors font-medium cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
             <span>Вернуться на главную страницу</span>
         </a>
     </div>

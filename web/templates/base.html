@@ -8,6 +8,12 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/favicon.png">
+    
+    <!-- Google Fonts: Inter & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -15,14 +21,28 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    },
                     colors: {
+                        dark: {
+                            base: '#07090e',
+                            surface: '#0d111a',
+                            elevated: '#141a26',
+                            border: '#1f293d',
+                            highlight: '#2a364f',
+                        },
                         brand: {
                             50: '#eef2ff',
                             100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
                             400: '#818cf8',
                             500: '#6366f1',
                             600: '#4f46e5',
                             700: '#4338ca',
+                            800: '#3730a3',
                             900: '#1e1b4b',
                         },
                         discord: {
@@ -42,87 +62,124 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        :root {
+            --bg-color: #07090e;
+        }
         body {
-            background-color: #0f1117;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
             color: #e2e8f0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
+
         .glass-panel {
-            background: rgba(30, 31, 34, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(13, 17, 26, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
+
         .glass-card {
-            background: rgba(43, 45, 49, 0.5);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.2s ease-in-out;
+            background: rgba(20, 26, 38, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
         .glass-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.15);
+            background: rgba(26, 34, 50, 0.7);
         }
-        /* Custom scrollbar */
+
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #111214;
+            background: #07090e;
         }
         ::-webkit-scrollbar-thumb {
-            background: #2b2d31;
+            background: #1f293d;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #4f46e5;
         }
+
+        /* Focus outline helper */
+        *:focus-visible {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
-<body class="min-h-screen flex flex-col antialiased">
-    <!-- Навигационная панель -->
-    <header class="glass-panel sticky top-0 z-50 border-b border-white/10">
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500/30 selection:text-brand-200">
+    <!-- Верхняя навигационная панель -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-white/[0.08]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <!-- Логотип бота -->
-            <a href="/" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                    <div class="w-full h-full bg-discord-darkest rounded-[10px] flex items-center justify-center overflow-hidden">
+            <a href="/" class="flex items-center gap-3.5 group cursor-pointer" aria-label="Главная страница Kobi">
+                <div class="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-purple-500 p-[1.5px] shadow-lg shadow-indigo-500/25 transition-transform duration-200 group-hover:scale-105">
+                    <div class="w-full h-full bg-dark-base rounded-[10px] flex items-center justify-center overflow-hidden">
                         {% if bot_avatar %}
-                        <img src="{{ bot_avatar }}" alt="Kobi" class="w-full h-full object-cover">
+                        <img src="{{ bot_avatar }}" alt="Kobi Avatar" class="w-full h-full object-cover">
                         {% else %}
-                        <i class="fa-solid fa-paw text-brand-400 text-lg"></i>
+                        <svg class="w-5 h-5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                            <path d="M19 13.5A7.5 7.5 0 0 1 12 21a7.5 7.5 0 0 1-7.5-7.5C4.5 9.36 7.86 6 12 6s7.5 3.36 7.5 7.5Z"/>
+                            <path d="m9 13 2 2 4-4"/>
+                        </svg>
                         {% endif %}
                     </div>
                 </div>
                 <div>
-                    <div class="font-bold text-lg text-white flex items-center gap-2">
-                        🐾 Kobi
-                        <span class="text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-medium">BOT</span>
+                    <div class="font-bold text-base sm:text-lg text-white flex items-center gap-2 tracking-tight">
+                        <span>Kobi</span>
+                        <span class="text-[10px] bg-brand-500/15 text-brand-300 border border-brand-500/30 px-1.5 py-0.5 rounded-md font-mono font-medium tracking-wide">AI BOT</span>
                     </div>
-                    <div class="text-xs text-gray-400 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span class="font-mono">Online • {{ bot_latency }} ms</span>
+                    <div class="text-xs text-gray-400 flex items-center gap-1.5 font-mono">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>Online</span>
+                        <span class="text-gray-600">•</span>
+                        <span class="text-emerald-400/90">{{ bot_latency }} ms</span>
                     </div>
                 </div>
             </a>
 
             <!-- Пользователь / Вход -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
                 {% if user %}
-                <div class="flex items-center gap-3 bg-white/5 py-1.5 px-3 rounded-xl border border-white/5">
-                    <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full border border-brand-500/40">
+                <div class="flex items-center gap-3 bg-dark-elevated/70 py-1.5 px-3.5 rounded-xl border border-white/[0.08] shadow-sm">
+                    <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full border border-brand-500/40 object-cover">
                     <div class="hidden sm:block text-left">
-                        <div class="text-sm font-medium text-white">{{ user.username }}</div>
-                        <div class="text-[11px] text-gray-400">ID: {{ user.id }}</div>
+                        <div class="text-sm font-medium text-white leading-tight">{{ user.username }}</div>
+                        <div class="text-[11px] text-gray-400 font-mono">ID: {{ user.id }}</div>
                     </div>
-                    <a href="/logout" title="Выйти" class="ml-2 text-gray-400 hover:text-red-400 text-sm p-1.5 rounded-lg hover:bg-white/5 transition-colors">
-                        <i class="fa-solid fa-right-from-bracket"></i>
+                    <a href="/logout" title="Выйти" class="ml-1 text-gray-400 hover:text-red-400 text-sm p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" aria-label="Выйти">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
                     </a>
                 </div>
                 {% else %}
-                <a href="/login" class="inline-flex items-center gap-2 bg-discord-blurple hover:bg-indigo-600 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-discord-blurple/25 transition-all hover:scale-105 active:scale-95 text-sm">
-                    <i class="fa-brands fa-discord text-base"></i>
+                <a href="/login" class="inline-flex items-center gap-2.5 bg-discord-blurple hover:bg-[#4752c4] text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-discord-blurple/25 transition-all duration-200 hover:shadow-discord-blurple/40 cursor-pointer text-sm">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
                     <span>Войти через Discord</span>
                 </a>
                 {% endif %}
@@ -131,10 +188,16 @@
     </header>
 
     <!-- Основное содержимое -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         {% if query_error %}
-        <div class="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm mb-6 flex items-center gap-3 shadow-lg shadow-red-500/5">
-            <i class="fa-solid fa-triangle-exclamation text-red-400 text-lg"></i>
+        <div class="glass-panel p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm mb-6 flex items-center gap-3 shadow-lg shadow-red-500/10">
+            <div class="p-2 rounded-xl bg-red-500/20 text-red-400 shrink-0">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
             <div>
                 <span class="font-semibold text-white">Внимание:</span> <span>{{ query_error }}</span>
             </div>
@@ -144,43 +207,63 @@
     </main>
 
     <!-- Подвал -->
-    <footer class="border-t border-white/5 bg-discord-darkest/50 py-6 mt-12 text-center text-xs text-gray-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-paw text-brand-400"></i>
-                <span>🐾 Kobi Bot — Разработано командой <b class="text-gray-300">VRST Team</b></span>
+    <footer class="border-t border-white/[0.06] bg-dark-base/80 backdrop-blur-md py-8 mt-16 text-xs text-gray-400">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-lg bg-brand-500/20 border border-brand-500/30 flex items-center justify-center text-brand-300">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 13.5A7.5 7.5 0 0 1 12 21a7.5 7.5 0 0 1-7.5-7.5C4.5 9.36 7.86 6 12 6s7.5 3.36 7.5 7.5Z"/>
+                    </svg>
+                </div>
+                <span>Kobi Bot — Разработано командой <b class="text-white hover:text-brand-300 transition-colors">VRST Team</b></span>
             </div>
-            <div class="flex items-center gap-4">
-                <a href="/terms" class="hover:text-brand-400 transition-colors">Условия использования (Terms)</a>
+            <div class="flex items-center gap-4 sm:gap-6 font-medium">
+                <a href="/terms" class="hover:text-brand-400 transition-colors cursor-pointer">Условия (Terms)</a>
                 <span class="text-white/20">•</span>
-                <a href="/privacy" class="hover:text-brand-400 transition-colors">Политика конфиденциальности (Privacy)</a>
+                <a href="/privacy" class="hover:text-brand-400 transition-colors cursor-pointer">Конфиденциальность (Privacy)</a>
             </div>
         </div>
     </footer>
 
-    <!-- Toast уведомления -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <!-- Toast контейнер -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
     <script>
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             const isSuccess = type === 'success';
-            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${
-                isSuccess ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+            
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-2xl text-sm font-medium transition-all duration-300 transform translate-y-3 opacity-0 backdrop-blur-xl border ${
+                isSuccess 
+                    ? 'bg-emerald-950/85 text-emerald-100 border-emerald-500/30 shadow-emerald-500/10' 
+                    : 'bg-red-950/85 text-red-100 border-red-500/30 shadow-red-500/10'
             }`;
-            const icon = document.createElement('i');
-            icon.className = `fa-solid ${isSuccess ? 'fa-circle-check' : 'fa-triangle-exclamation'}`;
-            const span = document.createElement('span');
-            span.textContent = message;
-            toast.appendChild(icon);
-            toast.appendChild(span);
+
+            const iconContainer = document.createElement('div');
+            iconContainer.className = `p-1.5 rounded-lg shrink-0 ${isSuccess ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`;
+            
+            if (isSuccess) {
+                iconContainer.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+            } else {
+                iconContainer.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+            }
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'flex-1 leading-snug';
+            textSpan.textContent = message;
+
+            toast.appendChild(iconContainer);
+            toast.appendChild(textSpan);
             container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-3', 'opacity-0');
+            });
+
             setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
+                toast.classList.add('translate-y-3', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         }

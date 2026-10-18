@@ -6,68 +6,119 @@
 <div class="max-w-5xl mx-auto">
     <!-- Навигация назад -->
     <div class="mb-6">
-        <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
-            <i class="fa-solid fa-arrow-left"></i>
+        <a href="/" class="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-gray-400 hover:text-white transition-colors cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
             <span>Назад ко всем серверам</span>
         </a>
     </div>
 
     <!-- Шапка сервера -->
-    <div class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border border-white/10">
-        <div class="flex items-center gap-4">
+    <div class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border border-white/[0.08] relative overflow-hidden">
+        <div class="flex items-center gap-4 sm:gap-5">
             {% if guild.icon_url %}
-            <img src="{{ guild.icon_url }}" alt="{{ guild.name }}" class="w-16 h-16 rounded-2xl object-cover border border-white/10 shadow-lg">
+            <img src="{{ guild.icon_url }}" alt="{{ guild.name }}" class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover border border-white/10 shadow-xl shrink-0">
             {% else %}
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center font-bold text-2xl text-white shadow-lg">
+            <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center font-bold text-2xl text-white shadow-xl shrink-0 font-mono">
                 {{ guild.name[:2]|upper }}
             </div>
             {% endif %}
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-white">{{ guild.name }}</h1>
-                <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-400">
-                    <span class="bg-white/5 border border-white/10 px-2 py-0.5 rounded font-mono">ID: {{ guild.id }}</span>
-                    <span>•</span>
-                    <span><i class="fa-solid fa-users text-gray-500 mr-1"></i>{{ guild.member_count }} участников</span>
-                    <span>•</span>
-                    <span class="text-emerald-400 flex items-center gap-1">
-                        <i class="fa-solid fa-cloud"></i> Облако Discord активно
+                <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">{{ guild.name }}</h1>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 text-xs text-gray-300">
+                    <span class="bg-dark-surface/90 border border-white/10 px-2 py-0.5 rounded-md font-mono text-[11px] text-gray-400">ID: {{ guild.id }}</span>
+                    <span class="text-gray-600">•</span>
+                    <span class="flex items-center gap-1.5 text-gray-300">
+                        <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span>{{ guild.member_count }} участников</span>
+                    </span>
+                    <span class="text-gray-600">•</span>
+                    <span class="text-emerald-400 font-medium flex items-center gap-1.5">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>Облако Discord активно</span>
                     </span>
                 </div>
             </div>
         </div>
 
+        <!-- Кнопки действий -->
         <div class="flex items-center gap-3 w-full sm:w-auto">
-            <button onclick="syncToDiscord()" id="sync-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 px-4 py-2.5 rounded-xl transition-all text-sm font-medium">
-                <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+            <button type="button" onclick="syncToDiscord()" id="sync-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-dark-elevated hover:bg-dark-highlight text-gray-300 hover:text-white border border-white/10 px-4 py-2.5 rounded-xl transition-all duration-200 text-xs sm:text-sm font-medium cursor-pointer">
+                <svg class="w-4 h-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+                    <polyline points="12 12 12 6 9 9"/>
+                    <polyline points="12 6 15 9"/>
+                </svg>
                 <span>Синхронизировать</span>
             </button>
-            <button onclick="saveSettings()" id="save-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all text-sm font-semibold hover:scale-105 active:scale-95">
-                <i class="fa-solid fa-floppy-disk"></i>
+            <button type="button" onclick="saveSettings()" id="save-btn" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 transition-all duration-200 text-xs sm:text-sm font-semibold cursor-pointer">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
                 <span>Сохранить настройки</span>
             </button>
         </div>
     </div>
 
-    <!-- Навигационные вкладки модулей -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none border-b border-white/10">
-        <button type="button" onclick="switchTab('automod')" id="tab-btn-automod" class="tab-btn active px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all bg-brand-600 text-white shadow-lg shadow-indigo-600/20">
-            <i class="fa-solid fa-shield-halved"></i>
+    <!-- Модульные навигационные вкладки -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none border-b border-white/[0.08]">
+        <button type="button" onclick="switchTab('automod')" id="tab-btn-automod" class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 whitespace-nowrap transition-all duration-200 bg-brand-600 text-white shadow-lg shadow-indigo-600/20 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
             <span>Автомодерация & ИИ</span>
         </button>
-        <button type="button" onclick="switchTab('levels')" id="tab-btn-levels" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all text-gray-400 hover:text-white hover:bg-white/5">
-            <i class="fa-solid fa-ranking-star"></i>
-            <span>Уровни & Ранги</span>
+        <button type="button" onclick="switchTab('levels')" id="tab-btn-levels" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+            <span>Уровни & Voice XP</span>
         </button>
-        <button type="button" onclick="switchTab('welcome')" id="tab-btn-welcome" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all text-gray-400 hover:text-white hover:bg-white/5">
-            <i class="fa-solid fa-hand-wave"></i>
+        <button type="button" onclick="switchTab('welcome')" id="tab-btn-welcome" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
             <span>Приветствия</span>
         </button>
-        <button type="button" onclick="switchTab('tempvoice')" id="tab-btn-tempvoice" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all text-gray-400 hover:text-white hover:bg-white/5">
-            <i class="fa-solid fa-microphone-lines"></i>
+        <button type="button" onclick="switchTab('tempvoice')" id="tab-btn-tempvoice" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
             <span>Временные войсы</span>
         </button>
-        <button type="button" onclick="switchTab('embed')" id="tab-btn-embed" class="tab-btn px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all text-gray-400 hover:text-white hover:bg-white/5">
-            <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <button type="button" onclick="switchTab('embed')" id="tab-btn-embed" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 whitespace-nowrap transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/>
+                <path d="m14 7 3 3"/>
+                <path d="M5 6v4"/>
+                <path d="M19 14v4"/>
+                <path d="M10 2v2"/>
+                <path d="M7 8H3"/>
+                <path d="M21 16h-4"/>
+                <path d="M11 3H9"/>
+            </svg>
             <span>Конструктор Embed</span>
         </button>
     </div>
@@ -80,13 +131,23 @@
         <!-- ========================================== -->
         <div id="tab-content-automod" class="tab-pane space-y-8">
             <!-- Каналы и роли -->
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-brand-400 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-sliders"></i>
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
+                <div class="flex items-center gap-3.5 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-brand-300 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="21" x2="4" y2="14"/>
+                            <line x1="4" y1="10" x2="4" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12" y2="3"/>
+                            <line x1="20" y1="21" x2="20" y2="16"/>
+                            <line x1="20" y1="12" x2="20" y2="3"/>
+                            <line x1="1" y1="14" x2="7" y2="14"/>
+                            <line x1="9" y1="8" x2="15" y2="8"/>
+                            <line x1="17" y1="16" x2="23" y2="16"/>
+                        </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-white">Каналы и автороли</h2>
+                        <h2 class="text-lg font-bold text-white tracking-tight">Каналы и автороли</h2>
                         <p class="text-xs text-gray-400">Автовыдача роли новичкам и текстовый канал журнала аудита</p>
                     </div>
                 </div>
@@ -94,38 +155,46 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <!-- Выбор автороли -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-user-tag text-emerald-400"></i>
+                        <label for="autorole_id" class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                            </svg>
                             <span>Автовыдача роли новичкам (AutoRole)</span>
                         </label>
-                        <select name="autorole_id" id="autorole_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
-                            <option value="0" {% if settings.autorole_id == 0 %}selected{% endif %}>🔴 Отключено (не выдавать)</option>
+                        <select name="autorole_id" id="autorole_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors cursor-pointer">
+                            <option value="0" {% if settings.autorole_id == 0 %}selected{% endif %}>Отключено (не выдавать)</option>
                             {% for role in guild.roles %}
                                 <option value="{{ role.id }}" {% if settings.autorole_id == role.id %}selected{% endif %}>
                                     @{{ role.name }}
                                 </option>
                             {% endfor %}
                         </select>
-                        <p class="text-xs text-gray-500 mt-2">
+                        <p class="text-xs text-gray-400 mt-2">
                             Роль автоматически выдается каждому новому человеку при входе на сервер.
                         </p>
                     </div>
 
                     <!-- Выбор канала логов -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-receipt text-blue-400"></i>
+                        <label for="log_channel_id" class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
                             <span>Канал журнала аудита (Логирование)</span>
                         </label>
-                        <select name="log_channel_id" id="log_channel_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
-                            <option value="0" {% if settings.log_channel_id == 0 %}selected{% endif %}>🔴 Логи отключены</option>
+                        <select name="log_channel_id" id="log_channel_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors cursor-pointer">
+                            <option value="0" {% if settings.log_channel_id == 0 %}selected{% endif %}>Логи отключены</option>
                             {% for ch in guild.text_channels %}
                             <option value="{{ ch.id }}" {% if settings.log_channel_id == ch.id %}selected{% endif %}>
                                 #{{ ch.name }}
                             </option>
                             {% endfor %}
                         </select>
-                        <p class="text-xs text-gray-500 mt-2">
+                        <p class="text-xs text-gray-400 mt-2">
                             Сюда бот отправляет подробные отчёты об удаленных нарушениях.
                         </p>
                     </div>
@@ -133,111 +202,114 @@
             </div>
 
             <!-- Тумблеры автомодерации -->
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-shield-virus"></i>
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
+                <div class="flex items-center gap-3.5 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 text-purple-300 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="m9 12 2 2 4-4"/>
+                        </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-white">Модули защиты и нейросетей</h2>
-                        <p class="text-xs text-gray-400">Индивидуальные переключатели систем безопасности</p>
+                        <h2 class="text-lg font-bold text-white tracking-tight">Модули защиты и нейросетей</h2>
+                        <p class="text-xs text-gray-400">Индивидуальные переключатели систем безопасности сообщества</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- ИИ RuBERT Токсичность -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <div class="flex items-center gap-2">
                                 <span class="text-white font-semibold text-sm">ИИ RuBERT: Токсичность</span>
-                                <span class="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Нейросеть</span>
+                                <span class="bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono uppercase">Нейросеть</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Распознавание агрессии, оскорблений и токсичных высказываний.</p>
+                            <p class="text-xs text-gray-300 mt-1">Распознавание агрессии, оскорблений и токсичных высказываний в реальном времени.</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_toxicity" value="1" class="sr-only peer" {% if settings.anti_toxicity %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- ИИ OpenNSFW 18+ -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <div class="flex items-center gap-2">
-                                <span class="text-white font-semibold text-sm">ИИ OpenNSFW: 18+ Фото & Видео</span>
-                                <span class="bg-pink-500/20 text-pink-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Медиа ИИ</span>
+                                <span class="text-white font-semibold text-sm">ИИ OpenNSFW: 18+ Медиа</span>
+                                <span class="bg-pink-500/15 border border-pink-500/25 text-pink-300 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono uppercase">Медиа ИИ</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Сканирование картинок и покадровая проверка видеороликов на 18+ контент.</p>
+                            <p class="text-xs text-gray-300 mt-1">Сканирование картинок и покадровая проверка видеороликов на 18+ контент.</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_nsfw" value="1" class="sr-only peer" {% if settings.anti_nsfw %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- Умный Анти-Спам (30 сек) -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <div class="flex items-center gap-2">
                                 <span class="text-white font-semibold text-sm">Умный Анти-Спам</span>
-                                <span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">30 сек очистка</span>
+                                <span class="bg-amber-500/15 border border-amber-500/25 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono uppercase">30 сек очистка</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Детекция флуда с удалением предыстории нарушителя за последние 30 секунд.</p>
+                            <p class="text-xs text-gray-300 mt-1">Детекция флуда с удалением предыстории нарушителя за последние 30 секунд.</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_spam" value="1" class="sr-only peer" {% if settings.anti_spam %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- Анти-Инвайты -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <span class="text-white font-semibold text-sm">Блокировка ссылок-приглашений</span>
-                            <p class="text-xs text-gray-400 mt-1">Удаление сторонних ссылок `discord.gg/...` и партнерских приглашений.</p>
+                            <p class="text-xs text-gray-300 mt-1">Удаление сторонних ссылок `discord.gg/...` и партнерских приглашений.</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_invite" value="1" class="sr-only peer" {% if settings.anti_invite %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- Анти-Капс -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <span class="text-white font-semibold text-sm">Фильтр Капса (Caps Lock)</span>
-                            <p class="text-xs text-gray-400 mt-1">Пресечение длинных сообщений с заглавными буквами (>70%).</p>
+                            <p class="text-xs text-gray-300 mt-1">Пресечение длинных сообщений с заглавными буквами (>70%).</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_caps" value="1" class="sr-only peer" {% if settings.anti_caps %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- Анти-Массменшн -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between">
                         <div class="pr-4">
                             <span class="text-white font-semibold text-sm">Анти-Массменшн (@everyone)</span>
-                            <p class="text-xs text-gray-400 mt-1">Защита от спам-упоминаний (@everyone, @here и списков ролей).</p>
+                            <p class="text-xs text-gray-300 mt-1">Защита от спам-упоминаний (@everyone, @here и списков ролей).</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="anti_mass_mention" value="1" class="sr-only peer" {% if settings.anti_mass_mention %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
 
                     <!-- Иммунитет Администраторов -->
-                    <div class="bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl p-5 flex items-center justify-between transition-colors md:col-span-2">
+                    <div class="glass-card rounded-2xl p-5 flex items-center justify-between md:col-span-2 border-emerald-500/20 bg-emerald-500/[0.04]">
                         <div class="pr-4">
                             <div class="flex items-center gap-2">
                                 <span class="text-white font-semibold text-sm">Иммунитет Администраторов</span>
-                                <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Рекомендуется</span>
+                                <span class="bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono uppercase">Рекомендуется</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Не проверять сообщения участников с правами «Администратор» или «Управление сервером».</p>
+                            <p class="text-xs text-gray-300 mt-1">Не проверять сообщения участников с правами «Администратор» или «Управление сервером».</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="ignore_admins" value="1" class="sr-only peer" {% if settings.ignore_admins %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
                 </div>
@@ -248,28 +320,35 @@
         <!-- ВКЛАДКА 2: УРОВНИ И РАНГИ (LEVELS) -->
         <!-- ========================================== -->
         <div id="tab-content-levels" class="tab-pane hidden space-y-8">
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
                 <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-ranking-star"></i>
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                                <path d="M4 22h16"/>
+                                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                            </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white">Система уровней и опыта</h2>
-                            <p class="text-xs text-gray-400">Начисление XP за общение и карточки /rank</p>
+                            <h2 class="text-lg font-bold text-white tracking-tight">Система уровней и опыта</h2>
+                            <p class="text-xs text-gray-400">Начисление XP за активность, Voice XP и карточки /rank</p>
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" name="levels_enabled" value="1" class="sr-only peer" {% if levels.enabled %}checked{% endif %}>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Канал оповещений о повышении уровня</label>
-                        <select name="levels_announce_channel_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
-                            <option value="0" {% if levels.announce_channel_id == 0 %}selected{% endif %}>💬 В текущем канале общения</option>
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Канал оповещений о повышении уровня</label>
+                        <select name="levels_announce_channel_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors cursor-pointer">
+                            <option value="0" {% if levels.announce_channel_id == 0 %}selected{% endif %}>В текущем канале общения</option>
                             {% for ch in guild.text_channels %}
                             <option value="{{ ch.id }}" {% if levels.announce_channel_id == ch.id %}selected{% endif %}>#{{ ch.name }}</option>
                             {% endfor %}
@@ -277,8 +356,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Множитель опыта (XP Rate)</label>
-                        <select name="levels_xp_rate" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Множитель опыта (XP Rate)</label>
+                        <select name="levels_xp_rate" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors cursor-pointer font-mono">
                             <option value="0.5" {% if levels.xp_rate == 0.5 %}selected{% endif %}>0.5x (Замедленный)</option>
                             <option value="1.0" {% if levels.xp_rate == 1.0 %}selected{% endif %}>1.0x (Стандартный)</option>
                             <option value="1.5" {% if levels.xp_rate == 1.5 %}selected{% endif %}>1.5x (Ускоренный)</option>
@@ -287,55 +366,63 @@
                     </div>
 
                     <!-- Voice XP Toggle -->
-                    <div class="sm:col-span-2 pt-4 border-t border-white/5 flex items-center justify-between">
+                    <div class="sm:col-span-2 pt-5 border-t border-white/[0.06] flex items-center justify-between">
                         <div class="pr-4">
                             <div class="flex items-center gap-2">
-                                <span class="text-white font-medium text-sm">Голосовой опыт (Voice XP)</span>
-                                <span class="bg-indigo-500/20 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Новинка</span>
+                                <span class="text-white font-semibold text-sm">Голосовой опыт (Voice XP)</span>
+                                <span class="bg-indigo-500/15 border border-indigo-500/25 text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-md font-mono uppercase">Новинка</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Автоматическое начисление опыта за нахождение в голосовых и трибунных каналах (с умной защитой от накрутки и AFK).</p>
+                            <p class="text-xs text-gray-300 mt-1">Автоматическое начисление опыта за нахождение в голосовых каналах (с защитой от накрутки и AFK).</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" name="levels_voice_xp_enabled" value="1" class="sr-only peer" {% if levels.voice_xp_enabled %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
                 </div>
             </div>
 
             <!-- Награды за уровни (Level Rewards) -->
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-gift"></i>
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
+                <div class="flex items-center gap-3.5 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/25 text-purple-300 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="6"/>
+                            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+                        </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-white">Роли-награды за уровни</h2>
-                        <p class="text-xs text-gray-400">Автовыдача ролей при достижении определенного уровня</p>
+                        <h2 class="text-lg font-bold text-white tracking-tight">Роли-награды за уровни</h2>
+                        <p class="text-xs text-gray-400">Автовыдача ролей при достижении участником определенного ранга</p>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                    <input type="number" id="new-reward-lvl" placeholder="Уровень (напр. 5)" min="1" max="100" class="w-full sm:w-36 bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                    <select id="new-reward-role" class="w-full sm:flex-1 bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
-                        <option value="">-- Выберите роль --</option>
+                    <input type="number" id="new-reward-lvl" placeholder="Уровень (напр. 5)" min="1" max="100" class="w-full sm:w-40 bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 font-mono">
+                    <select id="new-reward-role" class="w-full sm:flex-1 bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 cursor-pointer">
+                        <option value="">-- Выберите роль для награды --</option>
                         {% for r in guild.roles %}
                         <option value="{{ r.id }}">@{{ r.name }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" onclick="addLevelReward()" class="bg-purple-600 hover:bg-purple-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus"></i>
+                    <button type="button" onclick="addLevelReward()" class="bg-purple-600 hover:bg-purple-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-purple-600/20">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
                         <span>Добавить награду</span>
                     </button>
                 </div>
 
                 <!-- Список наград -->
-                <div id="rewards-list" class="space-y-2">
+                <div id="rewards-list" class="space-y-2.5">
                     {% for rew in level_rewards %}
-                    <div class="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl">
+                    <div class="flex items-center justify-between p-3.5 bg-dark-surface/60 border border-white/[0.06] rounded-xl hover:border-purple-500/30 transition-colors">
                         <div class="flex items-center gap-3">
-                            <span class="bg-purple-500/20 text-purple-300 font-bold px-2.5 py-1 rounded-lg text-xs">⭐ Уровень {{ rew.level }}</span>
-                            <span class="text-sm text-gray-200">
+                            <span class="bg-purple-500/15 border border-purple-500/25 text-purple-300 font-bold px-2.5 py-1 rounded-lg text-xs font-mono">
+                                Уровень {{ rew.level }}
+                            </span>
+                            <span class="text-sm font-medium text-gray-200">
                                 {% for r in guild.roles if r.id == rew.role_id %}
                                 @{{ r.name }}
                                 {% else %}
@@ -343,49 +430,58 @@
                                 {% endfor %}
                             </span>
                         </div>
-                        <button type="button" onclick="removeLevelReward({{ rew.level }})" class="text-red-400 hover:text-red-300 p-1.5 transition-colors">
-                            <i class="fa-solid fa-trash-can"></i>
+                        <button type="button" onclick="removeLevelReward({{ rew.level }})" title="Удалить награду" class="text-gray-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"/>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
                         </button>
                     </div>
                     {% else %}
-                    <p class="text-xs text-gray-500 italic py-2">Наградные роли пока не добавлены.</p>
+                    <p class="text-xs text-gray-400 italic py-2">Наградные роли пока не добавлены.</p>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Топ лидеров сервера (Leaderboard Preview) -->
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-trophy"></i>
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
+                <div class="flex items-center gap-3.5 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-yellow-500/15 border border-yellow-500/25 text-yellow-300 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                            <path d="M4 22h16"/>
+                            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                        </svg>
                     </div>
                     <div>
-                        <h2 class="text-lg font-bold text-white">Топ-10 участников сервера</h2>
+                        <h2 class="text-lg font-bold text-white tracking-tight">Топ-10 участников сервера</h2>
                         <p class="text-xs text-gray-400">Самые активные участники по набранному опыту</p>
                     </div>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-2.5">
                     {% for lb in leaderboard %}
-                    <div class="flex items-center justify-between p-3.5 bg-white/5 border border-white/5 rounded-2xl">
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold text-sm w-7 text-center {% if lb.rank == 1 %}text-yellow-400 text-lg{% elif lb.rank == 2 %}text-slate-300 text-lg{% elif lb.rank == 3 %}text-amber-600 text-lg{% else %}text-gray-500{% endif %}">
+                    <div class="flex items-center justify-between p-3.5 bg-dark-surface/60 border border-white/[0.06] rounded-2xl hover:border-white/10 transition-colors">
+                        <div class="flex items-center gap-3.5">
+                            <span class="font-bold text-sm w-7 text-center font-mono {% if lb.rank == 1 %}text-yellow-400 text-base font-extrabold{% elif lb.rank == 2 %}text-slate-300 text-base{% elif lb.rank == 3 %}text-amber-500 text-base{% else %}text-gray-400{% endif %}">
                                 #{{ lb.rank }}
                             </span>
                             {% if lb.avatar %}
-                            <img src="{{ lb.avatar }}" class="w-9 h-9 rounded-full object-cover border border-white/10">
+                            <img src="{{ lb.avatar }}" alt="{{ lb.name }}" class="w-9 h-9 rounded-full object-cover border border-white/10">
                             {% else %}
-                            <div class="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center font-bold text-xs">{{ lb.name[:2]|upper }}</div>
+                            <div class="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center font-bold text-xs text-white font-mono">{{ lb.name[:2]|upper }}</div>
                             {% endif %}
                             <div>
                                 <span class="text-sm font-semibold text-white">{{ lb.name }}</span>
-                                <div class="text-xs text-gray-400">Уровень {{ lb.level }} • {{ lb.cur_xp }} / {{ lb.needed_xp }} XP</div>
+                                <div class="text-xs text-gray-400 font-mono">Уровень {{ lb.level }} • {{ lb.cur_xp }} / {{ lb.needed_xp }} XP</div>
                             </div>
                         </div>
-                        <span class="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full">{{ lb.xp }} XP</span>
+                        <span class="text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">{{ lb.xp }} XP</span>
                     </div>
                     {% else %}
-                    <p class="text-xs text-gray-500 italic py-2">На сервере пока никто не набрал опыт.</p>
+                    <p class="text-xs text-gray-400 italic py-2">На сервере пока никто не набрал опыт.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -395,29 +491,34 @@
         <!-- ВКЛАДКА 3: ПРИВЕТСТВИЯ НОВИЧКОВ -->
         <!-- ========================================== -->
         <div id="tab-content-welcome" class="tab-pane hidden space-y-8">
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
                 <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-hand-wave"></i>
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <line x1="19" y1="8" x2="19" y2="14"/>
+                                <line x1="22" y1="11" x2="16" y2="11"/>
+                            </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white">Приветствия новых участников</h2>
-                            <p class="text-xs text-gray-400">Графические открытки в канал и личные сообщения</p>
+                            <h2 class="text-lg font-bold text-white tracking-tight">Приветствия новых участников</h2>
+                            <p class="text-xs text-gray-400">Графические открытки с аватаром в канал и личные сообщения</p>
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" name="welcome_enabled" value="1" class="sr-only peer" {% if welcome.enabled %}checked{% endif %}>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-200 mb-2">Канал для приветствий</label>
-                            <select name="welcome_channel_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
-                                <option value="0" {% if welcome.channel_id == 0 %}selected{% endif %}>🔴 Отключено</option>
+                            <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Канал для приветствий</label>
+                            <select name="welcome_channel_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                                <option value="0" {% if welcome.channel_id == 0 %}selected{% endif %}>Отключено</option>
                                 {% for ch in guild.text_channels %}
                                 <option value="{{ ch.id }}" {% if welcome.channel_id == ch.id %}selected{% endif %}>#{{ ch.name }}</option>
                                 {% endfor %}
@@ -425,28 +526,28 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-200 mb-2">Графическая открытка с аватаром</label>
-                            <select name="welcome_send_card" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
-                                <option value="1" {% if welcome.send_card %}selected{% endif %}>🖼️ Генерировать открытку (Pillow)</option>
-                                <option value="0" {% if not welcome.send_card %}selected{% endif %}>Текст без открытки</option>
+                            <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Графическая открытка с аватаром</label>
+                            <select name="welcome_send_card" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                                <option value="1" {% if welcome.send_card %}selected{% endif %}>Генерировать открытку (Pillow Engine)</option>
+                                <option value="0" {% if not welcome.send_card %}selected{% endif %}>Текстовое сообщение без открытки</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">
                             Текст приветствия в канале
-                            <span class="text-xs text-gray-400 font-normal ml-2">Теги: {mention}, {user}, {server}, {count}</span>
+                            <span class="text-xs text-gray-400 font-mono font-normal ml-2">Теги: {mention}, {user}, {server}, {count}</span>
                         </label>
-                        <input type="text" name="welcome_message" value="{{ welcome.message }}" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                        <input type="text" name="welcome_message" value="{{ welcome.message }}" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">
                             Приветственное личное сообщение (DM)
-                            <span class="text-xs text-gray-400 font-normal ml-2">Оставьте пустым, чтобы не писать в ЛС</span>
+                            <span class="text-xs text-gray-400 font-normal ml-2">Оставьте пустым, чтобы не отправлять в ЛС</span>
                         </label>
-                        <textarea name="welcome_dm_message" rows="3" placeholder="Привет, {user}! Ознакомься с правилами в канале #правила!" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">{{ welcome.dm_message }}</textarea>
+                        <textarea name="welcome_dm_message" rows="3" placeholder="Привет, {user}! Ознакомься с правилами сервера в канале #правила!" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">{{ welcome.dm_message }}</textarea>
                     </div>
                 </div>
             </div>
@@ -456,44 +557,48 @@
         <!-- ВКЛАДКА 4: ВРЕМЕННЫЕ ВОЙС-КОМНАТЫ -->
         <!-- ========================================== -->
         <div id="tab-content-tempvoice" class="tab-pane hidden space-y-8">
-            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
                 <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-microphone-lines"></i>
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/25 text-cyan-300 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="22"/>
+                            </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white">Временные приватные войсы</h2>
-                            <p class="text-xs text-gray-400">Система авто-комнат «Создай свою комнату»</p>
+                            <h2 class="text-lg font-bold text-white tracking-tight">Временные приватные войсы</h2>
+                            <p class="text-xs text-gray-400">Система персональных каналов «Создай свою комнату»</p>
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" name="temp_voice_enabled" value="1" class="sr-only peer" {% if temp_voice.enabled %}checked{% endif %}>
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                        <div class="w-11 h-6 bg-gray-700/80 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Категория для создания комнат</label>
-                        <select name="temp_voice_category_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
-                            <option value="0" {% if temp_voice.category_id == 0 %}selected{% endif %}>-- Автоматически (в текущей) --</option>
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Категория для создания комнат</label>
+                        <select name="temp_voice_category_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 cursor-pointer">
+                            <option value="0" {% if temp_voice.category_id == 0 %}selected{% endif %}>Автоматически (в текущей)</option>
                             {% for cat in guild.categories %}
-                            <option value="{{ cat.id }}" {% if temp_voice.category_id == cat.id %}selected{% endif %}>📁 {{ cat.name }}</option>
+                            <option value="{{ cat.id }}" {% if temp_voice.category_id == cat.id %}selected{% endif %}>Категория: {{ cat.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-200 mb-2">Мастер-канал «➕ Создать комнату»</label>
-                        <select name="temp_voice_master_id" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500">
-                            <option value="0" {% if temp_voice.master_channel_id == 0 %}selected{% endif %}>🔴 Не настроен</option>
+                        <label class="block text-xs sm:text-sm font-semibold text-gray-200 mb-2">Мастер-канал «Создать комнату»</label>
+                        <select name="temp_voice_master_id" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 cursor-pointer">
+                            <option value="0" {% if temp_voice.master_channel_id == 0 %}selected{% endif %}>Не настроен</option>
                             {% for vc in guild.voice_channels %}
-                            <option value="{{ vc.id }}" {% if temp_voice.master_channel_id == vc.id %}selected{% endif %}>🔊 {{ vc.name }}</option>
+                            <option value="{{ vc.id }}" {% if temp_voice.master_channel_id == vc.id %}selected{% endif %}>Войс: {{ vc.name }}</option>
                             {% endfor %}
                         </select>
-                        <p class="text-xs text-gray-500 mt-2">
-                            Либо выполните команду `/tempvoice setup` прямо в Discord для авто-создания!
+                        <p class="text-xs text-gray-400 mt-2">
+                            Или используйте команду <code class="text-cyan-400 font-mono bg-white/5 px-1 py-0.5 rounded">/tempvoice setup</code> прямо в Discord для авто-создания!
                         </p>
                     </div>
                 </div>
@@ -506,14 +611,17 @@
     <!-- ВКЛАДКА 5: ВИЗУАЛЬНЫЙ КОНСТРУКТОР EMBED -->
     <!-- ========================================== -->
     <div id="tab-content-embed" class="tab-pane hidden space-y-8">
-        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-brand-400 flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08]">
+            <div class="flex items-center gap-3.5 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-brand-300 flex items-center justify-center">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/>
+                        <path d="m14 7 3 3"/>
+                    </svg>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold text-white">Визуальный конструктор Embed-объявлений</h2>
-                    <p class="text-xs text-gray-400">Создавайте красивые форматированные посты и отправляйте их в чаты</p>
+                    <h2 class="text-lg font-bold text-white tracking-tight">Визуальный конструктор Embed-объявлений</h2>
+                    <p class="text-xs text-gray-400">Создавайте красивые форматированные публикации и публикуйте их в каналы</p>
                 </div>
             </div>
 
@@ -521,8 +629,8 @@
                 <!-- Форма создания -->
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Канал для отправки</label>
-                        <select id="embed-channel" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
+                        <label for="embed-channel" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Канал для отправки</label>
+                        <select id="embed-channel" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
                             {% for ch in guild.text_channels %}
                             <option value="{{ ch.id }}">#{{ ch.name }}</option>
                             {% endfor %}
@@ -530,52 +638,74 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Заголовок Embed</label>
-                        <input type="text" id="embed-title" oninput="updateEmbedPreview()" placeholder="Например: Правила нашего сервера" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white">
+                        <label for="embed-title" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Заголовок Embed</label>
+                        <input type="text" id="embed-title" oninput="updateEmbedPreview()" placeholder="Например: Новости нашего сервера" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Описание / Текст объявления</label>
-                        <textarea id="embed-desc" oninput="updateEmbedPreview()" rows="4" placeholder="Текст объявления с поддержкой markdown..." class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white"></textarea>
+                        <label for="embed-desc" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Текст объявления</label>
+                        <textarea id="embed-desc" oninput="updateEmbedPreview()" rows="5" placeholder="Текст объявления с поддержкой markdown..." class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 leading-relaxed"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Цвет полоски</label>
+                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Цвет акцента</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" id="embed-color" oninput="updateEmbedPreview()" value="#5865F2" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0">
-                                <input type="text" id="embed-color-hex" oninput="syncColorInput(this.value)" value="#5865F2" class="flex-1 bg-discord-darkest/90 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white">
+                                <input type="color" id="embed-color" oninput="updateEmbedPreview()" value="#5865F2" class="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0 shrink-0">
+                                <input type="text" id="embed-color-hex" oninput="syncColorInput(this.value)" value="#5865F2" class="flex-1 bg-dark-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-brand-500">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Текст внизу (Footer)</label>
-                            <input type="text" id="embed-footer" oninput="updateEmbedPreview()" placeholder="Kobi Announcements" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
+                            <label for="embed-footer" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">Текст внизу (Footer)</label>
+                            <input type="text" id="embed-footer" oninput="updateEmbedPreview()" placeholder="Kobi Announcements" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">URL Большого изображения (Image)</label>
-                        <input type="url" id="embed-image" oninput="updateEmbedPreview()" placeholder="https://example.com/banner.png" class="w-full bg-discord-darkest/90 border border-white/10 rounded-xl px-4 py-2 text-sm text-white">
+                        <label for="embed-image" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">URL Большого баннера (Image)</label>
+                        <input type="url" id="embed-image" oninput="updateEmbedPreview()" placeholder="https://example.com/banner.png" class="w-full bg-dark-surface border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
 
-                    <button type="button" onclick="sendCustomEmbed()" id="send-embed-btn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 mt-4">
-                        <i class="fa-solid fa-paper-plane"></i>
-                        <span>Отправить в Discord</span>
+                    <button type="button" onclick="sendCustomEmbed()" id="send-embed-btn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 flex items-center justify-center gap-2.5 mt-4 cursor-pointer">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        <span>Опубликовать в Discord</span>
                     </button>
                 </div>
 
-                <!-- Живой предпросмотр Embed в стиле Discord -->
+                <!-- Аутентичный предпросмотр сообщения Discord -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">Живой предпросмотр в Discord:</label>
-                    <div class="bg-[#2b2d31] p-4 rounded-xl border border-white/5">
-                        <div id="preview-box" class="bg-[#232428] rounded-md p-4 border-l-4 border-brand-500 transition-colors">
-                            <h3 id="preview-title" class="font-bold text-white text-base mb-1">Заголовок объявления</h3>
-                            <p id="preview-desc" class="text-sm text-gray-300 whitespace-pre-line mb-3">Здесь будет отображаться ваш текст объявления...</p>
-                            <div id="preview-image-wrap" class="hidden mb-3">
-                                <img id="preview-image" src="" class="rounded max-h-48 w-full object-cover">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Живой предпросмотр в Discord:</label>
+                    <div class="bg-[#313338] p-5 rounded-2xl border border-white/[0.08] shadow-inner text-[#dbdee1]">
+                        <!-- Сообщение Discord -->
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white shrink-0 overflow-hidden">
+                                {% if bot_avatar %}
+                                <img src="{{ bot_avatar }}" alt="Kobi" class="w-full h-full object-cover">
+                                {% else %}
+                                <span class="font-bold text-xs">KB</span>
+                                {% endif %}
                             </div>
-                            <div id="preview-footer" class="text-[11px] text-gray-400 flex items-center gap-1.5 pt-2 border-t border-white/5">
-                                <span>Kobi Announcements</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="font-semibold text-sm text-white hover:underline cursor-pointer">Kobi</span>
+                                    <span class="bg-discord-blurple text-[10px] text-white font-bold px-1 py-0.5 rounded leading-none font-mono">BOT</span>
+                                    <span class="text-[11px] text-[#949ba4] font-mono">Сегодня в 20:00</span>
+                                </div>
+
+                                <!-- Embed контейнер -->
+                                <div id="preview-box" class="bg-[#2b2d31] rounded-lg p-4 border-l-4 border-brand-500 transition-colors shadow-sm max-w-lg">
+                                    <h3 id="preview-title" class="font-bold text-white text-base mb-2 hover:underline cursor-pointer">Заголовок объявления</h3>
+                                    <p id="preview-desc" class="text-sm text-[#dbdee1] whitespace-pre-line mb-3 leading-relaxed">Здесь будет отображаться ваш текст объявления...</p>
+                                    <div id="preview-image-wrap" class="hidden mb-3">
+                                        <img id="preview-image" src="" alt="Banner" class="rounded-lg max-h-52 w-full object-cover border border-white/5">
+                                    </div>
+                                    <div id="preview-footer" class="text-[11px] text-[#949ba4] flex items-center gap-2 pt-2 border-t border-white/[0.06] font-mono">
+                                        <span>Kobi Announcements</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -613,9 +743,15 @@ function switchTab(tabId) {
 
 async function saveSettings() {
     const saveBtn = document.getElementById('save-btn');
-    const originalText = saveBtn.innerHTML;
+    const originalContent = saveBtn.innerHTML;
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Сохраняем...';
+    saveBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Сохраняем...</span>
+    `;
 
     const form = document.getElementById('settings-form');
     const formData = new FormData(form);
@@ -625,7 +761,7 @@ async function saveSettings() {
         payload[key] = val;
     });
 
-    // Обработка нечеканных чекбоксов
+    // Обработка неактивных чекбоксов
     const toggles = [
         'anti_toxicity', 'anti_nsfw', 'anti_spam', 'anti_invite',
         'anti_caps', 'anti_mass_mention', 'ignore_admins',
@@ -654,7 +790,7 @@ async function saveSettings() {
         showToast('Ошибка сети: не удалось связаться с сервером', 'error');
     } finally {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        saveBtn.innerHTML = originalContent;
     }
 }
 
@@ -662,18 +798,24 @@ async function syncToDiscord() {
     const btn = document.getElementById('sync-btn');
     const orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Синхронизация...';
+    btn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-brand-400 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Синхронизация...</span>
+    `;
 
     try {
         const resp = await fetch(`/api/guild/${GUILD_ID}/sync`, { method: 'POST' });
         const res = await resp.json();
         if (res.success) {
-            showToast('Облачный канал 🔒-kobi-data успешно обновлен!', 'success');
+            showToast('Облачный канал #🔒-kobi-data успешно обновлен!', 'success');
         } else {
             showToast(res.error || 'Ошибка при синхронизации', 'error');
         }
     } catch (e) {
-        showToast('Ошибка сети', 'error');
+        showToast('Ошибка сети: сбой синхронизации', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = orig;
@@ -714,7 +856,13 @@ async function sendCustomEmbed() {
     const btn = document.getElementById('send-embed-btn');
     const orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправляем...';
+    btn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Публикуем...</span>
+    `;
 
     const payload = {
         channel_id: document.getElementById('embed-channel').value,
@@ -733,12 +881,12 @@ async function sendCustomEmbed() {
         });
         const res = await resp.json();
         if (res.success) {
-            showToast('✅ Embed-объявление успешно опубликовано в канале Discord!', 'success');
+            showToast('Embed-объявление успешно опубликовано в канале Discord!', 'success');
         } else {
             showToast(res.error || 'Ошибка при отправке', 'error');
         }
     } catch (e) {
-        showToast('Ошибка сети', 'error');
+        showToast('Ошибка сети при отправке Embed', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = orig;
@@ -763,12 +911,12 @@ async function addLevelReward() {
         const res = await resp.json();
         if (res.success) {
             showToast('Награда за уровень успешно добавлена!', 'success');
-            setTimeout(() => location.reload(), 800);
+            setTimeout(() => location.reload(), 600);
         } else {
             showToast(res.error || 'Ошибка добавления', 'error');
         }
     } catch (e) {
-        showToast('Ошибка сети', 'error');
+        showToast('Ошибка сети при добавлении награды', 'error');
     }
 }
 
@@ -784,12 +932,12 @@ async function removeLevelReward(lvl) {
         const res = await resp.json();
         if (res.success) {
             showToast('Награда за уровень удалена', 'success');
-            setTimeout(() => location.reload(), 800);
+            setTimeout(() => location.reload(), 600);
         } else {
             showToast(res.error || 'Ошибка удаления', 'error');
         }
     } catch (e) {
-        showToast('Ошибка сети', 'error');
+        showToast('Ошибка сети при удалении награды', 'error');
     }
 }
 </script>
